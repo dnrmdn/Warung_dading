@@ -1,0 +1,1 @@
+Pada fitur pembelian kemudian ada tombol catat. saya coba mencatat daftar belanjaan yang saya beli. disana saya tambah barang, cuma nama barangnya tidak bisa custom. jadi user hanya pilih yang ada disana saja

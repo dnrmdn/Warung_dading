@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Category ────────────────────────────────────────────────────────────────
+// Current domain: Product.category is a plain string.
+// MOCK_CATEGORIES is a string[]: ['Semua','Tea Jus','Top Ice','Jasjus','Kopi & Susu','Mie','Bihun','Resale','Production']
+// This table normalises that string into a lookup table.
+// Product.categoryId references this table; the string value lives in Category.name.
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ─── Product ─────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → Product interface
+// Field optionality matches the TS interface exactly.
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  variant       String?                       // TS: variant?: string
+  family        String                        // TS: family: string (required)
+  categoryId    String                        // FK → Category (maps TS category: string)
+  category      Category @relation(fields: [categoryId], references: [id])
+  inventoryType String                        // TS: InventoryType = 'barang' | 'bahan' | 'produk_jadi'
+  price         Int?                          // TS: price?: number — Rupiah Int, optional
+  preparedPrice Int?                          // TS: preparedPrice?: number — optional
+  costPrice     Int?                          // TS: costPrice?: number — optional
+  stock         Int                           // TS: stock: number — current balance
+  minStock      Int                           // TS: minStock: number
+  unit          String                        // TS: unit: string
+  iconName      String?                       // TS: iconName?: string
+  isActive      Boolean  @default(true)       // TS: isActive: boolean
+  hppNote       String?                       // TS: hppNote?: string
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  recipeComponents RecipeComponent[]
+  stockAdjustments StockAdjustmentLog[]
+  purchaseItems    PurchaseItem[]
+  saleItems        SaleItem[]
+}
+
+// ─── RecipeComponent ─────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → HPPComponent interface
+// Used by lib/hpp.ts calculateHPP(): sum of (quantity * unitCost)
+// No automatic recipe-material stock deduction exists in the current code.
+
+model RecipeComponent {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String                            // TS: name: string — component display name
+  quantity  Decimal  @db.Decimal(10, 2)        // TS: quantity: number — fractional allowed
+  unit      String                            // TS: unit: string
+  unitCost  Int                               // TS: unitCost: number — Rupiah Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── StockAdjustmentLog ──────────────────────────────────────────────────────
+// Maps to: types/warung.ts → StockAdjustmentLog interface
+// Immutable movement history. Product.stock is the live balance.
+//
+// type (StockAdjustmentType):  'add' | 'reduce' | 'set'
+// reason (StockAdjustmentReason): 'pembelian' | 'penjualan' | 'retur_supplier'
+//   | 'rusak_kadaluarsa' | 'pemakaian_sendiri' | 'koreksi_opname' | 'lainnya'
+//
+// String fields are used instead of Prisma enums so that the exact TS union
+// literals are the canonical source of truth and the schema does not diverge
+// from the application types.
+
+model StockAdjustmentLog {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  type          String                        // 'add' | 'reduce' | 'set'
+  amount        Int                           // TS: amount: number — adjustment magnitude
+  previousStock Int                           // TS: previousStock: number
+  newStock      Int                           // TS: newStock: number
+  reason        String                        // StockAdjustmentReason literals
+  note          String?                       // TS: note?: string
+  createdAt     DateTime @default(now())
+
+  @@index([productId, createdAt])
+}
+
+// ─── Supplier ────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → Supplier interface
+// Lookup table for purchase suppliers. Soft-archived via isActive.
+
+model Supplier {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  phone     String?
+  address   String?
+  note      String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  purchases Purchase[]
+}
+
+// ─── Purchase ────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → Purchase interface
+
+model Purchase {
+  id           String         @id @default(uuid())
+  purchaseDate DateTime       @db.Date          // TS: purchaseDate: string ('YYYY-MM-DD')
+  supplierId   String?                          // FK → Supplier (nullable, backfilled)
+  supplier     Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierName String?                          // Historical snapshot — never auto-updated
+  totalAmount  Int                              // TS: totalAmount: number — Rupiah Int
+  note         String?                          // TS: note?: string
+  createdAt    DateTime       @default(now())
+  items        PurchaseItem[]
+}
+
+// ─── PurchaseItem ────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → PurchaseItem interface
+// Historical snapshot: productName, unit, unitCost, subtotal frozen at purchase time.
+// Product relation uses Restrict on delete to preserve purchase history.
+
+model PurchaseItem {
+  id          String   @id @default(uuid())
+  purchaseId  String
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String                          // snapshot
+  quantity    Int                              // TS: quantity: number
+  unit        String                          // snapshot
+  unitCost    Int                              // TS: unitCost: number — Rupiah Int, snapshot
+  subtotal    Int                              // TS: subtotal: number — quantity * unitCost
+  createdAt   DateTime @default(now())
+}
+
+// ─── Sale ────────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → Sale interface
+// paymentMethod: currently only 'cash' (TS literal type: 'cash')
+//
+// Payment semantics:
+//   paymentAmount     = raw cash tendered at POS (may exceed totalAmount)
+//   changeAmount      = overpayment returned to customer (paymentAmount - totalAmount if > 0)
+//   initialAmountPaid = IMMUTABLE: cash applied at Sale creation = min(paymentAmount, totalAmount)
+//   initialAmountDue  = IMMUTABLE: receivable created at Sale creation = totalAmount - initialAmountPaid
+//   amountPaid        = MUTABLE: cumulative cash applied (initialAmountPaid + SUM(ReceivablePayment.amount))
+//   amountDue         = MUTABLE: remaining owed = totalAmount - amountPaid
+//   Invariant at creation:  initialAmountPaid + initialAmountDue = totalAmount
+//   Invariant always:       amountPaid + amountDue = totalAmount
+//   Invariant always:       amountPaid >= initialAmountPaid, amountDue <= initialAmountDue
+
+model Sale {
+  id                String   @id @default(uuid())
+  transactionNumber String   @unique           // TS: transactionNumber: string
+  transactionDate   DateTime @db.Date          // TS: transactionDate: string ('YYYY-MM-DD')
+  totalAmount       Int                        // TS: totalAmount: number — Rupiah Int
+  totalHpp          Int                        // TS: totalHpp: number
+  grossProfit       Int                        // TS: grossProfit: number
+  paymentMethod     String                     // TS: 'cash' — String for future extensibility
+  paymentAmount     Int                        // Initial cash received at POS
+  changeAmount      Int                        // Initial POS overpayment returned
+  paymentStatus     String   @default("paid")  // 'paid' | 'partial' | 'unpaid' — MUTABLE: current status
+  amountPaid        Int      @default(0)       // MUTABLE: total cash received toward this sale (grows with settlements)
+  amountDue         Int      @default(0)       // MUTABLE: remaining owed (shrinks with settlements)
+  customerName      String?                    // Optional: buyer name (required for receivables)
+  customerPhone     String?                    // Optional: buyer phone
+  initialAmountPaid Int      @default(0)       // IMMUTABLE: cash applied at Sale creation — never modified after insert
+  initialAmountDue  Int      @default(0)       // IMMUTABLE: receivable created at Sale creation — never modified after insert
+  createdAt         DateTime @default(now())
+  items             SaleItem[]
+  receivablePayments ReceivablePayment[]
+}
+
+// ─── SaleItem ────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → SaleItem interface
+// Historical snapshot: productName, mode, unit, unitPrice, unitHpp, subtotal, hppTotal.
+// Product relation uses Restrict on delete to preserve sale history.
+// Product is soft-archived via isActive; not cascade-deleted.
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productName String                          // snapshot
+  mode        String                          // TS: SellingMode = 'direct' | 'brewed'
+  quantity    Int                              // TS: quantity: number
+  unit        String                          // snapshot
+  unitPrice   Int                              // TS: unitPrice: number — Rupiah Int, snapshot
+  unitHpp     Int                              // TS: unitHpp: number — snapshot
+  subtotal    Int                              // TS: subtotal: number
+  hppTotal    Int                              // TS: hppTotal: number
+  createdAt   DateTime @default(now())
+
+  @@index([productId, createdAt])
+}
+
+// ─── ReceivablePayment ───────────────────────────────────────────────────────
+// Records each payment event against an outstanding sale (piutang).
+// Created when a customer settles part or all of a receivable.
+// Never modifies stock or creates a new Sale.
+
+model ReceivablePayment {
+  id        String   @id @default(uuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  amount    Int                                // Rupiah paid in this payment
+  note      String?                            // Optional note
+  paidAt    DateTime @default(now())           // When the payment was made
+  createdAt DateTime @default(now())
+
+  @@index([saleId, paidAt])
+}
+
+// ─── Expense ─────────────────────────────────────────────────────────────────
+// Maps to: types/warung.ts → Expense interface
+// category (ExpenseCategory): 'operasional' | 'bahan_baku' | 'transportasi'
+//   | 'gaji' | 'peralatan' | 'lainnya'
+
+model Expense {
+  id          String   @id @default(uuid())
+  expenseDate DateTime @db.Date               // TS: expenseDate: string ('YYYY-MM-DD')
+  category    String                          // ExpenseCategory literals
+  amount      Int                              // TS: amount: number — Rupiah Int
+  description String?                          // TS: description?: string
+  createdAt   DateTime @default(now())
+}
+
+// ─── Better Auth Models ──────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  OWNER
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(ADMIN)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
