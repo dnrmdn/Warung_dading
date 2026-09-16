@@ -176,7 +176,7 @@ export default async function HomePage() {
                 <span>Peringatan Stok Menipis</span>
               </div>
               <Link
-                href="/stok"
+                href="/stok?filter=low"
                 className="text-caption text-text-secondary hover:text-primary transition-colors"
               >
                 Lihat Semua

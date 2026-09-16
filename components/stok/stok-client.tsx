@@ -14,16 +14,20 @@ import { Product } from '@/types/warung';
 import { AlertTriangle, Package, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+type StockStatusFilter = 'all' | 'low';
+
 interface StokClientProps {
   initialProducts: Product[];
   categories: string[];
+  initialStockStatus: StockStatusFilter;
 }
 
-export function StokClient({ initialProducts, categories }: StokClientProps) {
+export function StokClient({ initialProducts, categories, initialStockStatus }: StokClientProps) {
   const router = useRouter();
 
   const [selectedTab, setSelectedTab] = useState<StockFilterTab>('semua');
   const [searchQuery, setSearchQuery] = useState('');
+  const [stockStatusFilter, setStockStatusFilter] = useState<StockStatusFilter>(initialStockStatus);
 
   // Form sheet state (Create / Edit master data)
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -91,7 +95,7 @@ export function StokClient({ initialProducts, categories }: StokClientProps) {
     [initialProducts]
   );
 
-  // Filter products by inventory type tab and search query
+  // Filter products by inventory type tab, stock status, and search query (AND)
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       const matchType =
@@ -99,9 +103,12 @@ export function StokClient({ initialProducts, categories }: StokClientProps) {
       const matchSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.family.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchType && matchSearch;
+      const matchStockStatus =
+        stockStatusFilter === 'all' ||
+        (stockStatusFilter === 'low' && product.stock <= product.minStock);
+      return matchType && matchSearch && matchStockStatus;
     });
-  }, [initialProducts, selectedTab, searchQuery]);
+  }, [initialProducts, selectedTab, searchQuery, stockStatusFilter]);
 
   return (
     <AppShell>
