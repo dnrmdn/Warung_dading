@@ -8,7 +8,6 @@ export default function LaporanLoading() {
       <HeaderBar
         title="Laporan Bisnis"
         subtitle="Memuat analitik data..."
-        backHref="/more"
       />
 
       <div className="flex flex-col gap-4 p-4 pb-20 animate-pulse">

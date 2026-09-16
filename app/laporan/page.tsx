@@ -9,6 +9,7 @@ import { ReportFinancialFlow } from '@/components/laporan/report-financial-flow'
 import { ReportTopProductsChart } from '@/components/laporan/report-top-products-chart';
 import { ReportExpenseChart } from '@/components/laporan/report-expense-chart';
 import { enforceReportPage } from '@/lib/auth/page-guard';
+import { LogoutButton } from '@/components/navigation/logout-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +40,7 @@ export default async function LaporanPage({ searchParams }: LaporanPageProps) {
       <HeaderBar
         title="Laporan Bisnis"
         subtitle="Analitik Keuangan & Performa Warung"
-        backHref="/more"
+        rightAction={<LogoutButton />}
       />
 
       <div className="flex flex-col gap-4 p-4 pb-20">

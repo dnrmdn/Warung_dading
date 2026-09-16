@@ -4,6 +4,12 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Skip authentication checks for Server Actions
+  // Server Actions have their own server-side authentication via guard functions
+  if (request.headers.get('next-action')) {
+    return NextResponse.next();
+  }
+
   // Skip static assets, api routes, and public files
   if (
     pathname.startsWith('/_next') ||
