@@ -572,31 +572,35 @@ export async function getReportData(filter?: ReportFilter): Promise<ReportData> 
   if (topSaleItems.length > 0) {
     const productIds = topSaleItems.map((item) => item.productId);
 
-    // Retrieve historical snapshot names
-    const recentSaleItems = await prisma.saleItem.findMany({
-      where: {
-        productId: { in: productIds },
-        sale: {
-          transactionDate: {
-            gte: startDateUtc,
-            lte: endDateUtc,
+    // Both sub-queries need productIds from Wave 1 but are independent of each other.
+    const [recentSaleItems, catalogProducts] = await Promise.all([
+      // Retrieve historical snapshot names
+      prisma.saleItem.findMany({
+        where: {
+          productId: { in: productIds },
+          sale: {
+            transactionDate: {
+              gte: startDateUtc,
+              lte: endDateUtc,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-      distinct: ['productId'],
-      select: {
-        productId: true,
-        productName: true,
-      },
-    });
-    const snapshotNameMap = new Map(recentSaleItems.map((s) => [s.productId, s.productName]));
+        orderBy: { createdAt: 'desc' },
+        distinct: ['productId'],
+        select: {
+          productId: true,
+          productName: true,
+        },
+      }),
 
-    // Retrieve active icon name from catalog
-    const catalogProducts = await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, iconName: true },
-    });
+      // Retrieve active icon name from catalog
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, iconName: true },
+      }),
+    ]);
+
+    const snapshotNameMap = new Map(recentSaleItems.map((s) => [s.productId, s.productName]));
     const catalogMap = new Map(catalogProducts.map((p) => [p.id, p.iconName]));
 
     topProducts = topSaleItems.map((item) => {

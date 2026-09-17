@@ -100,6 +100,7 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     quantity: Number(rc.quantity),
     unit: rc.unit,
     unitCost: rc.unitCost,
+    materialProductId: rc.materialProductId ?? undefined,
   }));
 
   return {
@@ -570,14 +571,117 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
 
           const grossProfit = totalAmount - totalHpp;
 
-          // Step 4: Aggregate required physical quantities by productId
+          // Step 3b: Build linked material consumption map.
+          // For each sale item, iterate its recipe components and accumulate
+          // required stock per materialProductId.  Components with
+          // materialProductId == null are legacy/HPP-only — skip them entirely.
+          const materialConsumption = new Map<string, number>();
+
+          for (const item of input.items) {
+            const prismaProduct = productMap.get(item.productId)!;
+
+            for (const rc of prismaProduct.recipeComponents) {
+              if (rc.materialProductId == null) {
+                // Legacy component: affects HPP only, never consumes stock.
+                continue;
+              }
+
+              const recipeQty = Number(rc.quantity);
+
+              // Defensive guard: linked quantities must be integers.
+              // The products service enforces this at write time, but pre-existing
+              // data could violate the rule.  Block the sale rather than silently
+              // rounding or corrupting integer stock.
+              if (!Number.isInteger(recipeQty) || recipeQty < 1) {
+                throw new SalesValidationError(
+                  `Komponen resep "${rc.name}" pada produk "${prismaProduct.name}" memiliki jumlah non-integer (${rc.quantity}) untuk bahan stok terhubung. Perbarui resep terlebih dahulu.`
+                );
+              }
+
+              const required = recipeQty * item.quantity;
+              const current = materialConsumption.get(rc.materialProductId) || 0;
+              materialConsumption.set(rc.materialProductId, current + required);
+            }
+          }
+
+          // Step 3c: Fetch and validate all required material Products.
+          // Performed inside the same transaction so the existence check is
+          // consistent with the subsequent stock mutation.
+          const materialProductMap = new Map<string, { id: string; name: string; unit: string }>();
+
+          if (materialConsumption.size > 0) {
+            const materialIds = Array.from(materialConsumption.keys());
+            const materialProducts = await tx.product.findMany({
+              where: {
+                id: { in: materialIds },
+                isActive: true,
+              },
+              select: { id: true, name: true, unit: true },
+            });
+
+            for (const mp of materialProducts) {
+              materialProductMap.set(mp.id, mp);
+            }
+
+            // Verify every required material exists and is active.
+            for (const matId of materialIds) {
+              if (!materialProductMap.has(matId)) {
+                throw new ProductNotFoundError(
+                  `Produk bahan dengan ID "${matId}" tidak ditemukan atau sudah tidak aktif.`
+                );
+              }
+            }
+
+            // Option B: emit a console warning (non-blocking) when recipe unit
+            // differs from the material product's unit.  The sale proceeds;
+            // no conversion is applied.
+            for (const item of input.items) {
+              const pp = productMap.get(item.productId)!;
+              for (const rc of pp.recipeComponents) {
+                if (rc.materialProductId == null) continue;
+                const mp = materialProductMap.get(rc.materialProductId);
+                if (mp && rc.unit.trim().toLowerCase() !== mp.unit.trim().toLowerCase()) {
+                  console.warn(
+                    `[Sales] Unit mismatch on ${candidateTransactionNumber}: ` +
+                    `recipe component "${rc.name}" unit="${rc.unit}" vs ` +
+                    `material product "${mp.name}" unit="${mp.unit}". ` +
+                    `Consuming ${Number(rc.quantity) * item.quantity} units as-is (no conversion).`
+                  );
+                }
+              }
+            }
+          }
+
+          // Step 4: Aggregate ALL required stock deductions — finished products
+          // AND linked material products — into a single map before any mutation.
+          // This prevents independent per-product checks passing while the
+          // combined total exceeds available stock.
           const aggregatedStockReq = new Map<string, number>();
+
+          // Finished-product quantities (existing behavior).
           for (const item of input.items) {
             const current = aggregatedStockReq.get(item.productId) || 0;
             aggregatedStockReq.set(item.productId, current + item.quantity);
           }
 
-          // Deterministic sort order to prevent lock-order inversion between concurrent sales
+          // Material consumption requirements (new).
+          for (const [matId, qty] of materialConsumption) {
+            const current = aggregatedStockReq.get(matId) || 0;
+            aggregatedStockReq.set(matId, current + qty);
+          }
+
+          // Combined lookup map for name resolution in error messages.
+          // Finished products are already in productMap; materials are in materialProductMap.
+          const combinedProductNameMap = new Map<string, string>();
+          for (const [id, p] of productMap) {
+            combinedProductNameMap.set(id, p.name);
+          }
+          for (const [id, mp] of materialProductMap) {
+            combinedProductNameMap.set(id, mp.name);
+          }
+
+          // Deterministic sort order to prevent lock-order inversion between concurrent sales.
+          // ALL product IDs (finished + material) are sorted together.
           const sortedProductIds = Array.from(aggregatedStockReq.keys()).sort((a, b) =>
             a.localeCompare(b)
           );
@@ -585,7 +689,7 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
           // Step 5: Concurrency-safe atomic conditional stock deduction
           for (const productId of sortedProductIds) {
             const requiredQty = aggregatedStockReq.get(productId)!;
-            const prismaProduct = productMap.get(productId)!;
+            const productName = combinedProductNameMap.get(productId) ?? productId;
 
             const updateResult = await tx.product.updateMany({
               where: {
@@ -599,7 +703,7 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
 
             if (updateResult.count === 0) {
               throw new InsufficientStockError(
-                `Stok produk "${prismaProduct.name}" tidak mencukupi untuk transaksi ini.`
+                `Stok produk "${productName}" tidak mencukupi untuk transaksi ini.`
               );
             }
 

@@ -8,6 +8,7 @@ export interface HPPComponent {
   quantity: number;
   unit: string;
   unitCost: number;
+  materialProductId?: string;
 }
 
 export interface Product {

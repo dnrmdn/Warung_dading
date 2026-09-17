@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product, HPPComponent } from '@/types/warung';
+import type { PickerProduct } from '@/lib/services/products';
 import { updateProductAction } from '@/app/actions/products';
 import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
@@ -10,7 +11,9 @@ import { ProductIcon } from '@/components/ui/product-icon';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { formatRupiah } from '@/lib/format';
 import {
+  AlertTriangle,
   Info,
+  Link2,
   PieChart,
   Layers,
   Plus,
@@ -18,13 +21,17 @@ import {
   Trash2,
   Calculator,
   Loader2,
+  X,
+  Search,
+  ChevronDown,
 } from 'lucide-react';
 
 interface HppDetailClientProps {
   initialProduct: Product;
+  availableProducts: PickerProduct[];
 }
 
-export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
+export function HppDetailClient({ initialProduct, availableProducts }: HppDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -34,6 +41,12 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
     [product.hppComponents]
   );
 
+  const productMap = useMemo(() => {
+    const m = new Map<string, PickerProduct>();
+    for (const p of availableProducts) m.set(p.id, p);
+    return m;
+  }, [availableProducts]);
+
   // Modal / Form state for Add and Edit actions
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -41,6 +54,34 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
   const [formQuantity, setFormQuantity] = useState('1');
   const [formUnit, setFormUnit] = useState('pcs');
   const [formUnitCost, setFormUnitCost] = useState('0');
+  const [formMaterialProductId, setFormMaterialProductId] = useState<string | null>(null);
+
+  // Inline product picker state
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQuery, setPickerQuery] = useState('');
+
+  const filteredPickerProducts = useMemo(() => {
+    const q = pickerQuery.trim().toLowerCase();
+    const bahanOnly = availableProducts.filter((p) => p.inventoryType === 'bahan');
+    const list = q.length === 0
+      ? bahanOnly
+      : bahanOnly.filter((p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.family || '').toLowerCase().includes(q) ||
+          (p.variant || '').toLowerCase().includes(q)
+        );
+    return list.slice(0, 50);
+  }, [availableProducts, pickerQuery]);
+
+  const selectedProductForForm = formMaterialProductId
+    ? productMap.get(formMaterialProductId)
+    : undefined;
+
+  const unitMismatch = Boolean(
+    selectedProductForForm &&
+    formUnit.trim().length > 0 &&
+    formUnit.trim().toLowerCase() !== selectedProductForForm.unit.trim().toLowerCase()
+  );
 
   // Real-time derived calculations from components
   const totalCalculatedHpp = useMemo(() => {
@@ -70,6 +111,9 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
     setFormQuantity('1');
     setFormUnit('pcs');
     setFormUnitCost('');
+    setFormMaterialProductId(null);
+    setPickerQuery('');
+    setPickerOpen(false);
     setIsFormOpen(true);
   };
 
@@ -80,6 +124,9 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
     setFormQuantity(String(comp.quantity));
     setFormUnit(comp.unit);
     setFormUnitCost(String(comp.unitCost));
+    setFormMaterialProductId(comp.materialProductId ?? null);
+    setPickerQuery('');
+    setPickerOpen(false);
     setIsFormOpen(true);
   };
 
@@ -106,6 +153,9 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
     const cleanName = formName.trim() || 'Bahan';
     const cleanUnit = formUnit.trim() || 'pcs';
 
+    const materialProductIdForPayload: string | undefined =
+      formMaterialProductId ?? undefined;
+
     let nextComponents: HPPComponent[];
     if (editingId) {
       // Update existing component
@@ -117,6 +167,7 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
               quantity: qty,
               unit: cleanUnit,
               unitCost: cost,
+              materialProductId: materialProductIdForPayload,
             }
           : c
       );
@@ -128,6 +179,7 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
         quantity: qty,
         unit: cleanUnit,
         unitCost: cost,
+        materialProductId: materialProductIdForPayload,
       };
       nextComponents = [...components, newComp];
     }
@@ -138,11 +190,24 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
       });
       if (res.success) {
         setIsFormOpen(false);
+        setPickerOpen(false);
         router.refresh();
       } else {
         alert(res.error?.message || 'Gagal menyimpan komponen HPP');
       }
     });
+  };
+
+  // Picker helper actions
+  const handleSelectMaterialProduct = (p: PickerProduct) => {
+    // Passive link only — do NOT overwrite name/unit/unitCost
+    setFormMaterialProductId(p.id);
+    setPickerOpen(false);
+    setPickerQuery('');
+  };
+
+  const handleClearMaterialProduct = () => {
+    setFormMaterialProductId(null);
   };
 
   // Form preview subtotal
@@ -233,6 +298,10 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
               <div className="flex flex-col divide-y divide-border/60">
                 {components.map((comp) => {
                   const subtotal = comp.quantity * comp.unitCost;
+                  const linked = !!comp.materialProductId;
+                  const linkedProduct = comp.materialProductId
+                    ? productMap.get(comp.materialProductId)
+                    : undefined;
                   return (
                     <div
                       key={comp.id}
@@ -240,9 +309,17 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
                     >
                       {/* Left: Name and Formula */}
                       <div className="min-w-0 flex-1">
-                        <span className="font-medium text-text block truncate">
-                          {comp.name}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-medium text-text block truncate">
+                            {comp.name}
+                          </span>
+                          {linked && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-soft/50 border border-primary/20 text-[10px] font-medium text-primary shrink-0">
+                              <Link2 className="w-2.5 h-2.5" />
+                              {linkedProduct ? linkedProduct.name : 'Produk stok'}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-caption text-text-secondary block">
                           {comp.quantity} {comp.unit} × {formatRupiah(comp.unitCost)}
                         </span>
@@ -346,10 +423,109 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
         title={editingId ? 'Edit Komponen Biaya' : 'Tambah Komponen Biaya'}
       >
         <form onSubmit={handleSaveComponent} className="flex flex-col gap-3 py-1">
+          {/* Material Product Picker (passive link) */}
+          <div>
+            <label className="text-caption font-semibold text-text-secondary block mb-1">
+              Hubungkan dengan Produk Stok (Opsional)
+            </label>
+
+            {selectedProductForForm ? (
+              <div className="w-full rounded-xl bg-primary-soft/40 border border-primary/30 p-3 flex items-center gap-3">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface text-primary border border-border/60 shrink-0">
+                  <ProductIcon name={selectedProductForForm.iconName} className="w-5 h-5 stroke-[1.8]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-small font-semibold text-text truncate">
+                      {selectedProductForForm.name}
+                    </span>
+                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-medium inline-flex items-center gap-0.5">
+                      <Link2 className="w-2.5 h-2.5" />
+                      Tersambung
+                    </span>
+                  </div>
+                  <span className="text-caption text-text-secondary block">
+                    {selectedProductForForm.category} • stok satuan: {selectedProductForForm.unit}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearMaterialProduct}
+                  className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger-soft/30 transition-colors shrink-0"
+                  aria-label="Lepas hubungan produk"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen((v) => !v)}
+                  className="w-full h-10 px-3 flex items-center justify-between bg-surface border border-border rounded-xl text-small text-text-secondary hover:border-primary/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-text-muted">
+                    <Search className="w-3.5 h-3.5" />
+                    Cari & pilih produk stok…
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${pickerOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {pickerOpen && (
+                  <div className="mt-1.5 rounded-xl border border-border bg-surface overflow-hidden shadow-md max-h-72 flex flex-col z-20 relative">
+                    <div className="p-2 border-b border-border/60">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
+                        <input
+                          type="text"
+                          value={pickerQuery}
+                          onChange={(e) => setPickerQuery(e.target.value)}
+                          placeholder="Cari nama produk…"
+                          autoFocus
+                          className="w-full h-9 pl-8 pr-2.5 bg-surface-subtle border border-border/60 rounded-lg text-small text-text placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="overflow-y-auto">
+                      {filteredPickerProducts.length === 0 ? (
+                        <div className="p-4 text-center text-caption text-text-muted">
+                          Produk tidak ditemukan
+                        </div>
+                      ) : (
+                        <ul className="flex flex-col">
+                          {filteredPickerProducts.map((p) => (
+                            <li key={p.id}>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectMaterialProduct(p)}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-surface-subtle transition-colors text-left"
+                              >
+                                <div className="flex items-center justify-center w-8 h-8 rounded-md bg-surface-subtle text-primary border border-border/60 shrink-0">
+                                  <ProductIcon name={p.iconName} className="w-4 h-4 stroke-[1.8]" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <span className="text-small font-medium text-text block truncate">{p.name}</span>
+                                  <span className="text-caption text-text-muted block">
+                                    {p.category} • {p.unit}
+                                  </span>
+                                </div>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Nama Komponen */}
           <div>
             <label className="text-caption font-semibold text-text-secondary block mb-1">
-              Nama Komponen / Bahan
+              Nama Komponen / Bahan {selectedProductForForm && <span className="text-text-muted font-normal">· snapshot tersimpan di resep</span>}
             </label>
             <input
               type="text"
@@ -392,6 +568,18 @@ export function HppDetailClient({ initialProduct }: HppDetailClientProps) {
               />
             </div>
           </div>
+
+          {/* Unit mismatch soft warning */}
+          {unitMismatch && (
+            <div className="flex items-start gap-2 p-2.5 rounded-xl bg-warning-soft/40 border border-warning/30 text-caption text-warning-dark">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <p>
+                Satuan resep berbeda dengan satuan produk stok (produk:{' '}
+                <strong>{selectedProductForForm?.unit}</strong> · resep:{' '}
+                <strong>{formUnit}</strong>). Perbedaan ini disengaja, tidak dikonversi otomatis.
+              </p>
+            </div>
+          )}
 
           {/* Harga Satuan */}
           <div>

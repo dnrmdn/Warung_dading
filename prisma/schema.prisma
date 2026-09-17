@@ -48,6 +48,7 @@ model Product {
 
   // Relations
   recipeComponents RecipeComponent[]
+  usedInRecipes    RecipeComponent[] @relation("RecipeMaterial")
   stockAdjustments StockAdjustmentLog[]
   purchaseItems    PurchaseItem[]
   saleItems        SaleItem[]
@@ -59,15 +60,19 @@ model Product {
 // No automatic recipe-material stock deduction exists in the current code.
 
 model RecipeComponent {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name      String                            // TS: name: string — component display name
-  quantity  Decimal  @db.Decimal(10, 2)        // TS: quantity: number — fractional allowed
-  unit      String                            // TS: unit: string
-  unitCost  Int                               // TS: unitCost: number — Rupiah Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(uuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  materialProductId String?
+  materialProduct   Product? @relation("RecipeMaterial", fields: [materialProductId], references: [id], onDelete: SetNull)
+  name              String                            // TS: name: string — component display name
+  quantity          Decimal  @db.Decimal(10, 2)        // TS: quantity: number — fractional allowed
+  unit              String                            // TS: unit: string
+  unitCost          Int                               // TS: unitCost: number — Rupiah Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([materialProductId])
 }
 
 // ─── StockAdjustmentLog ──────────────────────────────────────────────────────

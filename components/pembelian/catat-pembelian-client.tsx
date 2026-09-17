@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 import { createPurchaseAction } from '@/app/actions/purchases';
+import { getProductsAction } from '@/app/actions/products';
 import { getSuppliersAction } from '@/app/actions/suppliers';
 import { Product, Supplier } from '@/types/warung';
 import { PurchaseProductPickerSheet } from '@/components/pembelian/purchase-product-picker-sheet';
+import { ProductFormSheet } from '@/components/stok/product-form-sheet';
 import { formatRupiah } from '@/lib/format';
 import { Plus, Trash2, AlertCircle, Minus, ShoppingBag, Building, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -53,11 +55,15 @@ function derivedSubtotal(item: DraftItem): number | null {
 
 interface CatatPembelianClientProps {
   initialProducts: Product[];
+  categories: string[];
 }
 
-export function CatatPembelianClient({ initialProducts }: CatatPembelianClientProps) {
+export function CatatPembelianClient({ initialProducts, categories }: CatatPembelianClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  // Mutable local product list — seeded from server, updated when a new material is created inline
+  const [products, setProducts] = useState<Product[]>(initialProducts);
 
   // --- Suppliers ---
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -73,6 +79,7 @@ export function CatatPembelianClient({ initialProducts }: CatatPembelianClientPr
 
   // --- UI state ---
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isNewProductFormOpen, setIsNewProductFormOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch registered active suppliers on mount
@@ -136,6 +143,38 @@ export function CatatPembelianClient({ initialProducts }: CatatPembelianClientPr
     },
     []
   );
+
+  // Called by PurchaseProductPickerSheet when user clicks "Buat Bahan Baru"
+  const handleOpenNewProductForm = useCallback(() => {
+    setIsPickerOpen(false);
+    setIsNewProductFormOpen(true);
+  }, []);
+
+  // Called by ProductFormSheet after a new product is successfully created.
+  // Refreshes local product list from the server and immediately adds the newest
+  // product as a draft item so the user can continue without leaving the form.
+  const handleNewProductSuccess = useCallback(async () => {
+    setIsNewProductFormOpen(false);
+    try {
+      const res = await getProductsAction({ includeInactive: false });
+      if (!res.success) return;
+
+      const freshProducts = res.data;
+      setProducts(freshProducts);
+
+      // Find the product that is newest and not already in the draft
+      // (freshProducts is ordered by family asc, name asc — we identify the new
+      // one by finding IDs not present in the previous snapshot)
+      const prevIds = new Set(products.map((p) => p.id));
+      const newProduct = freshProducts.find((p) => !prevIds.has(p.id));
+
+      if (newProduct) {
+        handleProductSelect(newProduct);
+      }
+    } catch (err) {
+      console.error('Failed to refresh products after creation:', err);
+    }
+  }, [products, handleProductSelect]);
 
   const handleRemoveItem = useCallback((productId: string) => {
     setDraftItems((prev) => prev.filter((i) => i.productId !== productId));
@@ -210,8 +249,8 @@ export function CatatPembelianClient({ initialProducts }: CatatPembelianClientPr
       newErrors.items = 'Terdapat duplikasi produk dalam nota pembelian.';
     }
 
-    // Product still exists
-    const productMap = new Map(initialProducts.map((p) => [p.id, p]));
+    // Product still exists — use mutable local products state (includes inline-created products)
+    const productMap = new Map(products.map((p) => [p.id, p]));
     for (const item of draftItems) {
       if (!productMap.has(item.productId)) {
         newErrors.items = `Produk "${item.productName}" tidak lagi ditemukan di katalog.`;
@@ -533,9 +572,19 @@ export function CatatPembelianClient({ initialProducts }: CatatPembelianClientPr
       <PurchaseProductPickerSheet
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        products={initialProducts}
+        products={products}
         selectedProductIds={selectedProductIds}
         onSelect={handleProductSelect}
+        onCreateNew={handleOpenNewProductForm}
+      />
+
+      {/* Inline New Material Creation Sheet */}
+      <ProductFormSheet
+        isOpen={isNewProductFormOpen}
+        onClose={() => setIsNewProductFormOpen(false)}
+        mode="create"
+        categories={categories}
+        onSuccess={handleNewProductSuccess}
       />
     </AppShell>
   );

@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Product } from '@/types/warung';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { ProductIcon } from '@/components/ui/product-icon';
-import { Search, CheckCircle2 } from 'lucide-react';
+import { Search, CheckCircle2, Plus } from 'lucide-react';
 
 interface PurchaseProductPickerSheetProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface PurchaseProductPickerSheetProps {
   products: Product[];
   selectedProductIds: string[];
   onSelect: (product: Product) => void;
+  onCreateNew: () => void;
 }
 
 export function PurchaseProductPickerSheet({
@@ -20,6 +21,7 @@ export function PurchaseProductPickerSheet({
   products,
   selectedProductIds,
   onSelect,
+  onCreateNew,
 }: PurchaseProductPickerSheetProps) {
   const [search, setSearch] = useState('');
 
@@ -74,9 +76,17 @@ export function PurchaseProductPickerSheet({
             </p>
             <p className="text-caption text-text-muted">
               {activeProducts.length === 0
-                ? 'Tambahkan produk aktif di halaman Stok terlebih dahulu.'
-                : 'Coba kata kunci lain.'}
+                ? 'Tambahkan produk aktif di halaman Stok, atau buat bahan baru di sini.'
+                : 'Coba kata kunci lain atau buat bahan baru.'}
             </p>
+            <button
+              type="button"
+              onClick={onCreateNew}
+              className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-small font-semibold hover:bg-primary-dark active:scale-95 transition-all shadow-xs"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              Buat Bahan Baru
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-1.5">
@@ -123,6 +133,16 @@ export function PurchaseProductPickerSheet({
                 </button>
               );
             })}
+
+            {/* Persistent "Buat Bahan Baru" footer action */}
+            <button
+              type="button"
+              onClick={onCreateNew}
+              className="flex items-center justify-center gap-1.5 w-full py-2.5 mt-1 rounded-xl border border-dashed border-primary/50 bg-primary-soft/10 text-primary text-small font-semibold hover:bg-primary-soft/20 active:scale-[0.99] transition-all"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              Buat Bahan Baru
+            </button>
           </div>
         )}
       </div>

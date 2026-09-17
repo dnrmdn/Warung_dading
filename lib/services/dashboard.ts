@@ -62,8 +62,19 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
   const targetDateStr = dateOverride ?? getTodayLocalDate();
   const targetDate = parseDateToUtcMidnight(targetDateStr);
 
-  // 1. Query today's sales metrics & global outstanding receivables in parallel
-  const [todayAggregate, globalReceivableAggregate, outstandingCustomersGroup] = await Promise.all([
+  // 1. Query all independent data in a single parallel wave:
+  //    - today's sales metrics
+  //    - global outstanding receivables
+  //    - distinct unpaid customers
+  //    - all-time top 4 products (no dependency on sales metrics)
+  //    - active product list for low-stock warnings and catalog count (no dependency on top-products)
+  const [
+    todayAggregate,
+    globalReceivableAggregate,
+    outstandingCustomersGroup,
+    topGrouped,
+    activeProducts,
+  ] = await Promise.all([
     prisma.sale.aggregate({
       where: {
         transactionDate: targetDate,
@@ -98,6 +109,39 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
         customerName: { not: null },
       },
     }),
+
+    // All-time top 4 products by quantity sold — independent of today's metrics
+    prisma.saleItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        quantity: true,
+        subtotal: true,
+      },
+      orderBy: [
+        { _sum: { quantity: 'desc' } },
+        { _sum: { subtotal: 'desc' } },
+      ],
+      take: 4,
+    }),
+
+    // Active products for catalog count and low-stock warnings — independent of all above
+    prisma.product.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        stock: true,
+        minStock: true,
+        unit: true,
+        iconName: true,
+      },
+      orderBy: [
+        { stock: 'asc' },
+        { name: 'asc' },
+      ],
+    }),
   ]);
 
   const todayRevenue = todayAggregate._sum.totalAmount ?? 0;
@@ -116,52 +160,48 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
   );
   const unpaidCustomerCount = distinctCustomerSet.size;
 
-  // 2. Query all-time top 4 products by total sold quantity DESC, then subtotal revenue DESC
-  const topGrouped = await prisma.saleItem.groupBy({
-    by: ['productId'],
-    _sum: {
-      quantity: true,
-      subtotal: true,
-    },
-    orderBy: [
-      { _sum: { quantity: 'desc' } },
-      { _sum: { subtotal: 'desc' } },
-    ],
-    take: 4,
-  });
+  // activeProducts is already resolved from Wave 1 above
+  const totalProductCount = activeProducts.length;
 
+  // 2. Resolve top-product names and catalog attributes.
+  //    Both sub-queries depend on topGrouped (need topProductIds) but are independent of each other
+  //    → run them in parallel.
   let topProducts: DashboardTopProduct[] = [];
 
   if (topGrouped.length > 0) {
     const topProductIds = topGrouped.map((item) => item.productId);
 
-    // 3a. Retrieve the latest historical SaleItem.productName snapshot for each top product
-    const recentSaleItems = await prisma.saleItem.findMany({
-      where: {
-        productId: { in: topProductIds },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      distinct: ['productId'],
-      select: {
-        productId: true,
-        productName: true,
-      },
-    });
-    const snapshotNameMap = new Map(recentSaleItems.map((s) => [s.productId, s.productName]));
+    // 2a + 2b in parallel: name snapshots and catalog attributes are independent
+    const [recentSaleItems, catalogProducts] = await Promise.all([
+      // 2a. Latest historical SaleItem.productName snapshot for each top product
+      prisma.saleItem.findMany({
+        where: {
+          productId: { in: topProductIds },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        distinct: ['productId'],
+        select: {
+          productId: true,
+          productName: true,
+        },
+      }),
 
-    // 3b. Retrieve optional catalog attributes (price, iconName) from Product master
-    const catalogProducts = await prisma.product.findMany({
-      where: {
-        id: { in: topProductIds },
-      },
-      select: {
-        id: true,
-        price: true,
-        iconName: true,
-      },
-    });
+      // 2b. Current catalog attributes (price, iconName) from Product master
+      prisma.product.findMany({
+        where: {
+          id: { in: topProductIds },
+        },
+        select: {
+          id: true,
+          price: true,
+          iconName: true,
+        },
+      }),
+    ]);
+
+    const snapshotNameMap = new Map(recentSaleItems.map((s) => [s.productId, s.productName]));
     const catalogMap = new Map(catalogProducts.map((p) => [p.id, p]));
 
     topProducts = topGrouped.map((item) => {
@@ -178,27 +218,6 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
       };
     });
   }
-
-  // 4. Query active products to evaluate catalog count and low-stock warnings (stock <= minStock, top 3)
-  const activeProducts = await prisma.product.findMany({
-    where: {
-      isActive: true,
-    },
-    select: {
-      id: true,
-      name: true,
-      stock: true,
-      minStock: true,
-      unit: true,
-      iconName: true,
-    },
-    orderBy: [
-      { stock: 'asc' },
-      { name: 'asc' },
-    ],
-  });
-
-  const totalProductCount = activeProducts.length;
 
   const lowStockProducts: DashboardLowStockItem[] = activeProducts
     .filter((p) => p.stock <= p.minStock)

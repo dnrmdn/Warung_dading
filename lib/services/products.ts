@@ -14,6 +14,24 @@ import {
 } from '@/types/warung';
 import { Prisma } from '@prisma/client';
 
+// ─── Picker Product Type ─────────────────────────────────────────────────────
+
+/**
+ * Minimal product shape used by the HPP material picker.
+ * Contains only the fields actually rendered in the picker dropdown —
+ * no price, stock, HPP data, or recipeComponents.
+ */
+export interface PickerProduct {
+  id: string;
+  name: string;
+  variant?: string;
+  family: string;
+  inventoryType: InventoryType;
+  category: string;
+  unit: string;
+  iconName?: string;
+}
+
 // ─── Type Converters / Mappers ───────────────────────────────────────────────
 
 type PrismaProductWithRelations = Prisma.ProductGetPayload<{
@@ -30,6 +48,7 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     quantity: Number(rc.quantity),
     unit: rc.unit,
     unitCost: rc.unitCost,
+    materialProductId: rc.materialProductId ?? undefined,
   }));
 
   return {
@@ -93,6 +112,7 @@ export async function getCategories(): Promise<string[]> {
 
 /**
  * Retrieves all products, optionally including inactive/archived products.
+ * Includes category and recipeComponents for full Product type compatibility.
  */
 export async function getProducts(options?: {
   includeInactive?: boolean;
@@ -109,6 +129,44 @@ export async function getProducts(options?: {
   });
 
   return products.map(toDomainProduct);
+}
+
+/**
+ * Retrieves a lightweight product list for picker/search UIs.
+ * Returns only the fields needed to render a picker dropdown (name, family,
+ * variant, category, unit, iconName, inventoryType). Does NOT include
+ * recipeComponents, price, stock, or HPP data — use getProductById for those.
+ *
+ * Used by: /hpp/[id] material picker (HppDetailClient).
+ */
+export async function getProductsForPicker(): Promise<PickerProduct[]> {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      family: true,
+      variant: true,
+      inventoryType: true,
+      unit: true,
+      iconName: true,
+      category: {
+        select: { name: true },
+      },
+    },
+    orderBy: [{ family: 'asc' }, { name: 'asc' }],
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    family: p.family,
+    variant: p.variant ?? undefined,
+    inventoryType: p.inventoryType as InventoryType,
+    unit: p.unit,
+    iconName: p.iconName ?? undefined,
+    category: p.category.name,
+  }));
 }
 
 /**
@@ -149,6 +207,32 @@ export async function getLowStockProducts(): Promise<Product[]> {
 // ─── 3. Product CRUD Operations ──────────────────────────────────────────────
 
 /**
+ * Validates that every RecipeComponent that has a materialProductId (i.e. is
+ * linked to a stock Product) carries an integer quantity >= 1.
+ *
+ * Linked quantities must be integers because:
+ *   - Product.stock is INT4 (no decimal support)
+ *   - consumption = saleQty × recipeQty must remain integer
+ *
+ * Unlinked components (materialProductId == null/undefined) are exempt — they
+ * affect HPP only and are never used for stock deduction.
+ */
+function validateLinkedRecipeComponentQuantities(
+  components: HPPComponent[] | undefined
+): void {
+  if (!components || components.length === 0) return;
+  for (const c of components) {
+    if (c.materialProductId != null) {
+      if (!Number.isInteger(c.quantity) || c.quantity < 1) {
+        throw new Error(
+          `Komponen "${c.name}" terhubung ke produk stok — jumlah resep harus bilangan bulat ≥ 1 (diterima: ${c.quantity}).`
+        );
+      }
+    }
+  }
+}
+
+/**
  * Creates a new product and connects its category and recipe components.
  * Requires that the specified category already exists in the database.
  */
@@ -171,6 +255,9 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
   if (typeof input.minStock !== 'number' || isNaN(input.minStock) || input.minStock < 0) {
     throw new Error('Batas minimum stok harus berupa angka non-negatif yang valid.');
   }
+
+  // Linked recipe components must have integer quantities (for stock deduction compatibility).
+  validateLinkedRecipeComponentQuantities(input.hppComponents);
 
   const categoryName = input.category.trim();
 
@@ -206,6 +293,7 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
               quantity: new Prisma.Decimal(c.quantity),
               unit: c.unit.trim(),
               unitCost: c.unitCost,
+              materialProductId: c.materialProductId ?? null,
             })),
           }
         : undefined,
@@ -250,6 +338,11 @@ export async function updateProduct(
   }
 
   const updated = await prisma.$transaction(async (tx) => {
+    // Linked recipe components must have integer quantities (for stock deduction compatibility).
+    if (input.hppComponents !== undefined) {
+      validateLinkedRecipeComponentQuantities(input.hppComponents);
+    }
+
     // Synchronize recipe components if provided in updates
     if (input.hppComponents !== undefined) {
       await tx.recipeComponent.deleteMany({
@@ -264,6 +357,7 @@ export async function updateProduct(
             quantity: new Prisma.Decimal(c.quantity),
             unit: c.unit.trim(),
             unitCost: c.unitCost,
+            materialProductId: c.materialProductId ?? null,
           })),
         });
       }
@@ -335,6 +429,7 @@ export async function getRecipeComponents(productId: string): Promise<HPPCompone
     quantity: Number(rc.quantity),
     unit: rc.unit,
     unitCost: rc.unitCost,
+    materialProductId: rc.materialProductId ?? undefined,
   }));
 }
 

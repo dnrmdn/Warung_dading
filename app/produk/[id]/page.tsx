@@ -11,13 +11,16 @@ interface ProductDetailPageProps {
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   await enforceAdminPage();
   const { id } = await params;
-  const product = await getProductById(id);
+
+  // Both fetches are independent of each other — run them concurrently.
+  const [product, salesHistory] = await Promise.all([
+    getProductById(id),
+    getSalesByProductId(id, 50),
+  ]);
 
   if (!product) {
     notFound();
   }
-
-  const salesHistory = await getSalesByProductId(id, 50);
 
   return <ProductDetailClient initialProduct={product} salesHistory={salesHistory} />;
 }
