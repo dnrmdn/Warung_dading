@@ -761,6 +761,8 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
         },
         {
           isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+          maxWait: 5000,
+          timeout: 15000,
         }
       );
     } catch (error) {
@@ -784,8 +786,7 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
   }
 
   throw new TransactionCollisionError(
-    `Gagal membuat transaksi penjualan setelah ${MAX_RETRY_ATTEMPTS} kali percobaan karena konflik nomor transaksi. Silakan coba lagi.${
-      lastError instanceof Error ? ` Detail: ${lastError.message}` : ''
+    `Gagal membuat transaksi penjualan setelah ${MAX_RETRY_ATTEMPTS} kali percobaan karena konflik nomor transaksi. Silakan coba lagi.${lastError instanceof Error ? ` Detail: ${lastError.message}` : ''
     }`
   );
 }

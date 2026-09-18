@@ -1,0 +1,93 @@
+id,name,variant,family,categoryId,inventoryType,price,preparedPrice,costPrice,stock,minStock,unit,iconName,isActive,hppNote,createdAt,updatedAt
+42880610-f49e-4f24-9ad7-81378031e8f2,Indomie Kocok Bandung,Indomie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,3,2,pcs,Soup,true,,2026-09-16T06:30:21.955Z,2026-09-16T06:37:21.121Z
+4226a0e0-bf76-43f5-adfd-80c53de6202a,Aoka Cokelat,Aoka,Aoka,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2500,,2000,9,3,pcs,Cookie,true,,2026-09-16T06:32:39.308Z,2026-09-16T12:14:45.254Z
+680c84df-3651-4230-94e0-a21d11a66d3b,Aoka Vanilla,Aoka,Aoka,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2500,,2000,6,3,pcs,Cookie,true,,2026-09-16T06:33:23.292Z,2026-09-16T06:33:23.292Z
+39d3dda5-4db6-4d22-b223-8b8de197b656,Intermie,Mie,Intermie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,2000,3000,1300,4,3,pcs,Soup,true,,2026-09-16T06:34:51.183Z,2026-09-16T06:34:51.183Z
+d95403e8-c2d7-4370-b657-e901860b2602,Sakura Goreng,Mie,Sakura,adacbb29-58df-4c62-bbbc-0a148262166a,barang,2000,3000,1800,4,3,pcs,Soup,true,,2026-09-16T06:37:03.063Z,2026-09-16T06:37:03.063Z
+6d04ad54-a313-4cfa-aa30-d7caa5f79f62,Indomie Goreng,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,4,2,pcs,Soup,true,,2026-09-16T06:40:22.687Z,2026-09-16T06:40:22.687Z
+7bb1e8e9-d67f-4c85-8a81-13ef84be6e81,Indomie Cabe Ijo,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,1,2,pcs,Soup,true,,2026-09-16T06:41:15.050Z,2026-09-16T06:41:15.050Z
+0121b898-6e8c-4d14-9903-1c6ddff8ab36,Indomie Soto Mie,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,2,2,pcs,Soup,true,,2026-09-16T06:42:36.452Z,2026-09-16T06:42:36.452Z
+a8479d12-4bc7-423d-aeee-0b0de5384f9f,Indomie Goreng Rendang,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,1,2,pcs,Soup,true,,2026-09-16T06:43:25.781Z,2026-09-16T06:43:25.781Z
+9a98a099-21fc-4d31-a25d-bdf92b73efab,Indomie Sambal Rica-Rica,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,1,2,pcs,Soup,true,,2026-09-16T06:44:11.167Z,2026-09-16T06:44:11.167Z
+4546dc34-d735-4035-b661-f04dbea141d1,Indomie Nyemek Banglahdese,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3200,1,2,pcs,Soup,true,,2026-09-16T06:45:12.677Z,2026-09-16T06:45:12.677Z
+13ff50bf-a74e-4c96-8bf1-4a662cc72ab5,Indomie Ayam Bawang,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3100,1,2,pcs,Soup,true,,2026-09-16T06:46:02.580Z,2026-09-16T06:46:02.580Z
+2223126e-31f9-4372-90ed-901106181b9a,Indomie Ayam Special,Mie,Indomie,adacbb29-58df-4c62-bbbc-0a148262166a,barang,3500,4500,3100,1,2,pcs,Soup,true,,2026-09-16T06:46:42.492Z,2026-09-16T06:46:42.492Z
+a6b21b2a-7adb-41c9-9cad-0c3ff46b1668,Bihunku Bakso Sapi,Bihun,Bihunku,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,4000,2700,2,2,pcs,Soup,true,,2026-09-16T06:47:52.681Z,2026-09-16T06:47:52.681Z
+015495c0-12d7-4745-aeaa-62f53229d636,Sarimi Iga Sapi,Mie,Sarimi,adacbb29-58df-4c62-bbbc-0a148262166a,barang,2500,3500,2200,1,2,pcs,Soup,true,,2026-09-16T06:48:50.890Z,2026-09-16T06:48:50.890Z
+bfc0f03a-8291-475b-9925-f23df49d9efe,Nabati Keju,Wafer,Nabati,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1850,1,2,pcs,Package,true,,2026-09-16T06:50:16.820Z,2026-09-16T06:50:16.820Z
+42385a0f-2ed5-43de-b6b2-dd5f890237f9,Nabati Cokelat,Wafer,Nabati,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1850,4,2,pcs,Package,true,,2026-09-16T06:50:50.020Z,2026-09-16T06:50:50.020Z
+76cc7cba-b536-46fb-ae79-a8eaaee26b44,Aoka Keju,Aoka,Aoka,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2500,,2000,1,1,pcs,Cookie,true,,2026-09-16T06:52:00.865Z,2026-09-16T06:52:00.865Z
+0f84b96b-6a38-4c2f-a9f5-06b5bd56bd23,Beng-beng,Wafer,Beng-beng,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2500,,2300,11,10,pcs,Package,true,,2026-09-16T06:53:22.808Z,2026-09-16T06:53:22.808Z
+59e16a6e-201f-444e-b682-4a9598cc8836,Riry Snack,Snack,Riry,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,6,5,pcs,Package,true,,2026-09-16T06:54:53.714Z,2026-09-16T06:54:53.714Z
+f424daba-a05c-46c7-9b32-b3b305745a59,Cireng Cianjur,Snack,Cianjur,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,1,5,pcs,Package,true,,2026-09-16T06:55:40.916Z,2026-09-16T06:55:40.916Z
+9a312a20-b5e6-4e9d-98b1-2adc2392a549,Pogo,Snack,Pogo,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,7,5,pcs,Package,true,,2026-09-16T07:24:54.687Z,2026-09-16T07:24:54.687Z
+7ad7a101-6c30-4b0c-a441-f6785c8b413f,Garuda Pilus,Snack,Garuda,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,8,5,pcs,Package,true,,2026-09-16T07:29:50.696Z,2026-09-16T07:29:50.696Z
+378bf308-c7ec-4038-aa9e-41b2c83ecc0d,Oishi Caramel Popcorn,Snack,Oishi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,9,5,pcs,Package,true,,2026-09-16T07:31:27.915Z,2026-09-16T07:31:27.915Z
+5aaec1e6-8e36-4d0e-a48c-1788a1e79fc6,Malkist Cokelat,Snack,Malkist,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,10,5,pcs,Package,true,,2026-09-16T07:32:14.557Z,2026-09-16T07:32:14.557Z
+704cb99a-02e4-4ddc-bba0-2ed3df4930cb,Nori Tabur Jooy,Snack,Jooy,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,8,5,pcs,Package,true,,2026-09-16T07:33:17.299Z,2026-09-16T07:33:17.299Z
+1f4ce1e5-f9db-4450-86b3-c53a94697e65,Royco Ayam,Bumbu,Royco,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,6,5,pcs,Package,true,,2026-09-16T07:34:02.015Z,2026-09-16T07:34:02.015Z
+20c2c642-2839-4fde-8c40-b5c182a24939,Teh Sariwangi,Teh,Sariwangi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,4,2,pcs,Package,true,,2026-09-16T07:34:39.647Z,2026-09-16T07:34:39.647Z
+04a1ee90-b813-436c-85ce-a5bff5bcfdbb,Susu Bendera Cokelat,Susu,Frisian Flag,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,10,5,pcs,CupSoda,true,,2026-09-16T07:35:46.879Z,2026-09-16T07:36:15.689Z
+89736e44-6875-4760-97b5-4bacf7293e19,Susu Bendera Putih,Susu,Frisian Flag,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,2,5,pcs,CupSoda,true,,2026-09-16T07:36:57.931Z,2026-09-16T07:36:57.931Z
+6fad6e98-f347-47de-b43d-030eebd6d3e1,MaxTea,Teh,MaxTea,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,3000,4000,2800,7,5,pcs,CupSoda,true,,2026-09-16T07:37:55.011Z,2026-09-16T07:37:55.011Z
+da1b6405-e0e7-425c-a7d4-75076ceb32e1,Luwak White Coffee,Kopi,Luwak,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,10,5,pcs,CupSoda,true,,2026-09-16T07:38:50.976Z,2026-09-16T07:38:50.976Z
+414560e7-58d2-49a2-9e34-315159685a73,Creamy Latte,Kopi,Torabika,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,5,5,pcs,CupSoda,true,,2026-09-16T07:39:35.669Z,2026-09-16T07:39:35.669Z
+a5f719c9-61b7-443c-8c18-8641aa28e219,Indocafe Coffee Mix,Kopi,Indocafe,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,10,5,pcs,CupSoda,true,,2026-09-16T07:40:28.755Z,2026-09-16T07:40:28.755Z
+cdaa90fa-1dc1-4575-93b1-fca399d50322,Kapal Api,Kopi,Kapal Api,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,3000,1800,10,5,pcs,CupSoda,true,,2026-09-16T07:41:12.582Z,2026-09-16T07:41:12.582Z
+c205db3a-0488-4c50-bde9-fb7cb9ef86a2,Go Egg Roll,Snack,Siantar Top,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,437,20,10,pcs,Package,true,,2026-09-16T07:43:45.022Z,2026-09-16T07:43:45.022Z
+7590a4a1-87d3-4ef0-9f92-ef72459f4acb,Go Choco Crepes,Snack,Siantar Top,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,437,24,10,pcs,Package,true,,2026-09-16T07:44:46.658Z,2026-09-16T07:44:46.658Z
+293adaab-c563-4bd2-8d1d-06fa4ea1b201,Yupi Vegasaurus,Yupi,Yupi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,8,5,pcs,Package,true,,2026-09-16T07:45:37.837Z,2026-09-16T07:45:37.837Z
+737bc05c-dcf8-4582-9f10-71ad9f2a4ba6,Yupi Berri Bonz,Yupi,Yupi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,15,5,pcs,Package,true,,2026-09-16T07:46:24.273Z,2026-09-16T07:46:24.273Z
+d8172915-1d98-4da8-b141-e781f35c4f97,Yupi Minimonz,Yupi,Yupi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,15,5,pcs,Package,true,,2026-09-16T07:47:01.143Z,2026-09-16T07:47:01.143Z
+45eb2511-7325-47a2-85a0-5e060fbd2eb0,Yupi Seaworld,Yupi,Yupi,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,15,10,pcs,Package,true,,2026-09-16T07:47:32.853Z,2026-09-16T07:47:32.853Z
+7d01a0c9-8e4b-41ba-b7e6-53c1842fbce4,Rumput Laut Rafatar,Rumput Laut,Rafatar,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,13,5,pcs,Package,true,,2026-09-16T07:48:19.813Z,2026-09-16T07:48:19.813Z
+7023698f-4f46-4b62-a9b5-eb9d0471e2d2,Sukro,Sukro,Garuda,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,6,5,pcs,Package,true,,2026-09-16T07:48:54.439Z,2026-09-16T07:48:54.439Z
+9cde0436-883b-48a7-90be-45323214558f,Sabun Nuovo,Sabun,Nuovo,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,3000,,2800,3,2,pcs,Package,true,,2026-09-16T07:49:28.466Z,2026-09-16T07:49:28.466Z
+93a74115-7763-493d-a88c-79f57ceaa14a,Mama Lemon 58g,Sabun,Mama Lemon,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,1000,,800,5,2,pcs,Package,true,,2026-09-16T07:50:24.650Z,2026-09-16T07:50:24.650Z
+9075c53b-63c3-40b3-8e51-a86bc8400781,Mama Lemon 107g,Sabun,Mama Lemon,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,2,2,pcs,Package,true,,2026-09-16T07:51:02.062Z,2026-09-16T07:51:02.062Z
+b9bc023e-69b5-498a-90ca-37c32f500f53,Ciki Berhadiah Kuning,Ciki,Ciki,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,4,2,pcs,Package,true,,2026-09-16T07:51:56.374Z,2026-09-16T07:51:56.374Z
+35f7167c-9b20-44cf-b8cc-b3d31a650b1b,Ciki Berhadiah Cokelat,,Ciki Berhadiah Cokelat,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,3,2,pcs,Package,true,,2026-09-16T07:52:29.327Z,2026-09-16T07:52:29.327Z
+23d25a50-bba1-48c9-beee-8a76c7755881,Ciki Berhadiah Merah,Ciki,Ciki,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,2000,,1800,1,2,pcs,Package,true,,2026-09-16T07:53:02.618Z,2026-09-16T07:53:02.618Z
+267822c6-e3c1-442f-889c-7c44ff4653a4,Pewangi Royale,Pewangi,So Klin,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,34,10,pcs,Package,true,,2026-09-16T07:54:48.101Z,2026-09-16T07:54:48.101Z
+a2490b29-817b-43a8-b0bf-35d8ded408da,Liquid So Klin,Liquid,So Klin,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,,,,42,10,pcs,Package,true,,2026-09-16T07:55:58.543Z,2026-09-16T07:55:58.543Z
+46252228-b690-4363-a05b-82f4ce83b2cf,Liquid Sayang,Liquid,Sayang,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,6,5,pcs,Package,true,,2026-09-16T07:56:35.140Z,2026-09-16T07:56:35.140Z
+4b7feb50-11bd-4115-b139-5c5dc6af5893,Clear Sampoo,Sampoo,Clear,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,22,5,pcs,Package,true,,2026-09-16T07:57:33.174Z,2026-09-16T07:57:33.174Z
+ecc88504-bf14-4747-955a-924ed8d10781,Sunsilk Sampoo,Sampoo,Sunsilk,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,16,10,pcs,Package,true,,2026-09-16T07:58:22.307Z,2026-09-16T07:58:22.307Z
+f3be9798-a047-46ba-9867-e3fba36351b7,Pantene Sampoo,Sampoo,Pantene,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,20,10,pcs,Package,true,,2026-09-16T07:59:06.048Z,2026-09-16T07:59:06.048Z
+22e9668e-dff2-4dc7-bb74-577e0c2fab54,Zinc Sampoo,Sampoo,Zinc,22c114ba-6313-40aa-bdfc-7f44f0eff3a8,barang,500,,430,10,10,pcs,Package,true,,2026-09-16T07:59:46.744Z,2026-09-16T07:59:46.744Z
+f23e63fe-67eb-4d3f-a3bb-c52b2fa4bf79,Tea Jus Gulabatu,Gulabatu,Tea Jus,a476d64a-446d-4ee7-a20a-8d18dfa4a250,barang,500,1000,330,30,20,pcs,Coffee,true,,2026-09-16T08:01:30.902Z,2026-09-16T08:01:30.902Z
+394b7ddd-d572-4a58-94d5-f8d4953871ce,Tea Jus Lemon,Lemon,Tea Jus,a476d64a-446d-4ee7-a20a-8d18dfa4a250,barang,500,1000,330,8,5,pcs,Coffee,true,,2026-09-16T08:02:12.404Z,2026-09-16T08:02:12.404Z
+43d29349-ec56-4701-90df-bf1691de7fd4,Tea Jus Apel,Apel,Tea Jus,a476d64a-446d-4ee7-a20a-8d18dfa4a250,barang,500,1000,330,2,2,pcs,Coffee,true,,2026-09-16T08:02:45.387Z,2026-09-16T08:02:45.387Z
+e402e3fe-4ca0-48a9-bb51-2338b54e628e,Jasjus Jeruk Peras,Jeruk Peras,Jasjus,1c2d1a03-bd5a-4241-a335-34dbe598aac2,barang,500,1000,400,7,5,pcs,Package,true,,2026-09-16T08:03:29.256Z,2026-09-16T08:03:29.256Z
+d3539078-8ca7-4895-9589-fd61dc06821b,Jasjus Jeruk,Jeruk,Jasjus,1c2d1a03-bd5a-4241-a335-34dbe598aac2,barang,500,1000,400,5,5,pcs,Coffee,true,,2026-09-16T08:04:05.389Z,2026-09-16T08:04:05.389Z
+335f1f83-f7ac-40a2-aa5c-67cba972e7ec,Jasjus Jeruk Nipis,Jeruk Nipis,Jasjus,1c2d1a03-bd5a-4241-a335-34dbe598aac2,barang,500,1000,400,11,5,pcs,Coffee,true,,2026-09-16T08:04:45.756Z,2026-09-16T08:04:45.756Z
+5343c54a-da7d-45b1-9a45-f83ed25ec357,Jasjus Anggur,Anggur,Jasjus,1c2d1a03-bd5a-4241-a335-34dbe598aac2,barang,500,1000,400,12,5,pcs,Coffee,true,,2026-09-16T08:05:25.990Z,2026-09-16T08:05:25.990Z
+528a6486-db10-43e9-9f6e-8a4a1cea2071,Jasjus Kelapa Muda,Kelapa Muda,Jasjus,1c2d1a03-bd5a-4241-a335-34dbe598aac2,barang,500,1000,400,2,10,pcs,Coffee,true,,2026-09-16T08:05:57.433Z,2026-09-16T08:05:57.433Z
+b2003d16-1133-49e5-8308-b781f421d124,Top Ice Bizzchoco,Bizzchoco,Top Ice,474af5be-7640-487d-921e-54a0a4ecb70b,barang,500,1000,400,10,5,pcs,Coffee,true,,2026-09-16T08:06:53.043Z,2026-09-16T08:06:53.043Z
+1f31d60f-b423-481c-9f48-f34e977420ed,Top Ice Cappuccino,Cappuccino,Top Ice,474af5be-7640-487d-921e-54a0a4ecb70b,barang,500,1000,400,3,5,pcs,Coffee,true,,2026-09-16T08:07:31.270Z,2026-09-16T08:07:31.270Z
+79f47778-efcb-4f82-8048-21ab448e6688,Top Ice Cokelat,Cokelat,Top Ice,474af5be-7640-487d-921e-54a0a4ecb70b,barang,500,1000,400,6,5,pcs,Coffee,true,,2026-09-16T08:08:11.003Z,2026-09-16T08:08:11.003Z
+a6d4e4af-c61b-4dc1-8965-b2f4e480ee4c,Finto Stroberry,Stroberry,Finto,b1285b71-f35d-44fe-9bf9-44a8c1575aad,barang,500,1000,430,7,5,pcs,Coffee,true,,2026-09-16T08:09:24.203Z,2026-09-16T08:18:30.420Z
+0447d56b-1957-48ab-a421-d89383b2782d,Sedotan,,Sedotan,3d782a85-10e0-4793-962e-c8d0354bd507,bahan,,,,200,100,pcs,Layers,true,,2026-09-16T10:04:46.744Z,2026-09-16T10:04:46.744Z
+6a38b9d3-7b50-4feb-9500-262d2f59c282,Plastik,,Plastik,3d782a85-10e0-4793-962e-c8d0354bd507,bahan,,,,200,100,pcs,Layers,true,,2026-09-16T10:05:23.406Z,2026-09-16T10:05:23.406Z
+b7d44e9d-57be-4786-a620-c5e086939742,TEST - Purchase Material - 1789560879496,,TEST - Purchase Material - 1789560879496,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,17,0,sachet,Package,true,,2026-09-16T12:14:48.447Z,2026-09-16T12:14:51.266Z
+27b65835-7b38-4294-a578-0a87ba7c66a5,P4-Sedotan-1789563410658,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,100,0,pcs,,true,,2026-09-16T12:56:52.228Z,2026-09-16T12:56:52.228Z
+332a6c1d-89dd-4f07-80e7-235f3b43cf06,P4-Plastik-1789563413546,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,50,0,pcs,,true,,2026-09-16T12:56:54.136Z,2026-09-16T12:56:54.136Z
+49cffcfc-039c-49a2-b46b-81fd43a3c604,P4-Sugar-1789563415453,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,200,0,gram,,true,,2026-09-16T12:56:56.036Z,2026-09-16T12:56:56.036Z
+4d46466f-ea77-475a-b2b6-b1cf69042757,P4-Milk-1789563417353,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,2,0,ml,,true,,2026-09-16T12:56:57.947Z,2026-09-16T12:56:57.947Z
+b90033a0-51d3-4564-a10b-0087b1ce6f7b,P4-TeaJus-1789563419255,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,5000,,500,100,0,pcs,,true,,2026-09-16T12:56:59.843Z,2026-09-16T12:56:59.843Z
+334d40e8-4c30-491c-8b21-e1231d1680b1,P4-Kopi-1789563421403,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,5000,,500,100,0,pcs,,true,,2026-09-16T12:57:01.986Z,2026-09-16T12:57:01.986Z
+0d36ef04-d8ed-4833-bcce-1284cd226535,P4-Legacy-1789563423521,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,,300,50,0,pcs,,true,,2026-09-16T12:57:04.136Z,2026-09-16T12:57:04.136Z
+718ef6db-9c5b-4beb-8834-eb11fb07ceb5,P4-DualSugar-1789563425678,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,4000,,400,50,0,pcs,,true,,2026-09-16T12:57:06.266Z,2026-09-16T12:57:06.266Z
+5d8299ef-a5de-49b6-baf1-c4d28f140067,P4-Mismatch-1789563427807,,P4-Test,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,,300,50,0,pcs,,true,,2026-09-16T12:57:08.511Z,2026-09-16T12:57:08.511Z
+b42db0d5-9ba2-41ef-9871-0fe590544fc4,T4-Sed-1789563576544,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,92,0,pcs,,true,,2026-09-16T12:59:37.695Z,2026-09-16T13:00:41.297Z
+81c342e3-bb2b-4694-a17f-f6687052dc40,T4-Pla-1789563579211,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,44,0,pcs,,true,,2026-09-16T12:59:39.362Z,2026-09-16T13:00:11.609Z
+3c55c6a6-3097-477d-99c0-e21d0982b900,T4-Sug-1789563580141,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,193,0,gram,,true,,2026-09-16T12:59:40.260Z,2026-09-16T13:00:17.702Z
+a1e11547-4944-44f4-b314-4dc4864b0bbd,T4-Mlk-1789563580969,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,bahan,,,,2,0,ml,,true,,2026-09-16T12:59:41.087Z,2026-09-16T12:59:41.087Z
+3d0a9662-3a4b-4577-a44f-d6590e0d673f,T4-TeaJus-1789563581790,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,5000,,500,94,0,pcs,,true,,2026-09-16T12:59:41.908Z,2026-09-16T13:00:11.247Z
+c61fe81b-dcd7-4aca-b21d-46c508eea0cb,T4-Kopi-1789563582975,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,5000,,500,99,0,pcs,,true,,2026-09-16T12:59:43.097Z,2026-09-16T13:00:12.325Z
+f4aa6db5-1bf2-449a-964b-00f813f92d79,T4-Dual-1789563584050,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,4000,,400,49,0,pcs,,true,,2026-09-16T12:59:44.171Z,2026-09-16T13:00:18.059Z
+ec48840c-df27-4da4-8758-81da5b116fa6,T4-Legacy-1789563585115,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,,300,48,0,pcs,,true,,2026-09-16T12:59:45.235Z,2026-09-16T13:00:31.149Z
+46290a64-5426-4f6f-a6ba-e7facc8a5813,T4-MilkUser-1789563586205,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,5000,,500,50,0,pcs,,true,,2026-09-16T12:59:46.326Z,2026-09-16T12:59:46.326Z
+9ca0e3f9-4e67-47fe-907e-4600feb18b13,T4-Mismatch-1789563587140,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,,300,49,0,pcs,,true,,2026-09-16T12:59:47.256Z,2026-09-16T13:00:40.951Z
+da9dde50-9f9e-43ba-8c72-57c5f052eb03,T4-NoRecipe-1789563588077,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,2000,,500,18,0,pcs,,true,,2026-09-16T12:59:48.195Z,2026-09-16T13:00:46.256Z
+42ccfe38-c3af-4ae8-a7d1-a0b1d6db6bfa,T4-BadRC-1789563635039,,T4,2911a92a-8ce9-4c75-86e1-e5fb1e98b0d5,barang,3000,,,50,0,pcs,,true,,2026-09-16T13:00:35.157Z,2026-09-16T13:00:35.157Z
