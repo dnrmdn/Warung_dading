@@ -348,6 +348,8 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
     },
     {
       isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      maxWait: 5000,
+      timeout: 15000,
     }
   );
 }
