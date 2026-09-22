@@ -248,6 +248,7 @@ export interface ReceivableSaleItem {
   amountPaid: number;
   amountDue: number;
   paymentStatus: PaymentStatus;
+  items: SaleItem[];
 }
 
 export interface ReceivableSummary {
@@ -257,3 +258,41 @@ export interface ReceivableSummary {
   saleCount: number;
   sales: ReceivableSaleItem[];
 }
+
+// ─── Daily Cash Balance & Drawer Position ─────────────────────────────
+
+export interface DailyCashBalance {
+  id: string;
+  date: string; // 'YYYY-MM-DD'
+  openingCash: number; // Rupiah Int >= 0
+  openingNote?: string;
+  openedByUserId?: string;
+  closingCash?: number;
+  closingNote?: string;
+  closedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SetOpeningCashInput {
+  date?: string; // Optional 'YYYY-MM-DD', defaults to Jakarta local date
+  openingCash: number; // Non-negative integer
+  openingNote?: string;
+}
+
+export interface TodayCashPosition {
+  date: string; // 'YYYY-MM-DD'
+  isInitialized: boolean;
+  openingCash: number;
+  openingNote?: string;
+  cashIn: number; // today's Sale.initialAmountPaid + ReceivablePayment.amount
+  cashOut: number; // today's Expense.amount
+  expectedCash: number; // openingCash + cashIn - cashOut
+  closingCash?: number | null;
+  closedAt?: string | null;
+  // Detailed breakdown for transparency
+  posCashIn: number; // SUM(Sale.initialAmountPaid)
+  receivableCashIn: number; // SUM(ReceivablePayment.amount)
+  expenseCashOut: number; // SUM(Expense.amount)
+}
+

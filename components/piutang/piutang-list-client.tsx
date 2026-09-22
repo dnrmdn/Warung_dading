@@ -13,9 +13,11 @@ import {
   Phone,
   Receipt,
   ChevronRight,
+  ChevronDown,
   AlertCircle,
   Banknote,
   CheckCircle2,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface PiutangListClientProps {
@@ -30,6 +32,9 @@ export function PiutangListClient({ initialSummary }: PiutangListClientProps) {
     customerName: string;
     sale: ReceivableSaleItem;
   } | null>(null);
+
+  // Expanded items state per sale ID
+  const [expandedSaleIds, setExpandedSaleIds] = useState<Set<string>>(new Set());
 
   // Payment form state
   const [paymentAmountStr, setPaymentAmountStr] = useState('');
@@ -194,46 +199,130 @@ export function PiutangListClient({ initialSummary }: PiutangListClientProps) {
                   {/* Expanded Outstanding Sales */}
                   {isExpanded && (
                     <div className="border-t border-border/60 bg-surface-subtle/50 divide-y divide-border/40">
-                      {customer.sales.map((sale) => (
-                        <div
-                          key={sale.id}
-                          className="p-3.5 flex items-center justify-between gap-3"
-                        >
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <Receipt className="w-3.5 h-3.5 text-text-muted" />
-                              <span className="font-mono text-small font-semibold text-text">
-                                {sale.transactionNumber}
-                              </span>
-                              <Badge
-                                variant={sale.paymentStatus === 'partial' ? 'warning' : 'danger'}
-                              >
-                                {sale.paymentStatus === 'partial' ? 'Sebagian' : 'Belum Bayar'}
-                              </Badge>
-                            </div>
-                            <div className="text-caption text-text-secondary mt-0.5">
-                              Tgl: {sale.transactionDate} • Total: {formatRupiah(sale.totalAmount)}
-                            </div>
-                            <div className="text-caption text-text-muted">
-                              Sudah dibayar: {formatRupiah(sale.amountPaid)}
-                            </div>
-                          </div>
+                      {customer.sales.map((sale) => {
+                        const isItemsExpanded = expandedSaleIds.has(sale.id);
+                        const totalItemQty = sale.items?.reduce((sum, it) => sum + it.quantity, 0) ?? 0;
 
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            <span className="text-body-medium font-bold text-amber-600 dark:text-amber-400">
-                              {formatRupiah(sale.amountDue)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenPayment(customer.customerName, sale)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark active:scale-95 transition-all shadow-2xs"
-                            >
-                              <Banknote className="w-3.5 h-3.5" />
-                              <span>Bayar</span>
-                            </button>
+                        const toggleItems = () => {
+                          setExpandedSaleIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(sale.id)) {
+                              next.delete(sale.id);
+                            } else {
+                              next.add(sale.id);
+                            }
+                            return next;
+                          });
+                        };
+
+                        return (
+                          <div key={sale.id} className="flex flex-col">
+                            {/* Sale summary row */}
+                            <div className="p-3.5 flex items-center justify-between gap-3">
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Receipt className="w-3.5 h-3.5 text-text-muted" />
+                                  <span className="font-mono text-small font-semibold text-text">
+                                    {sale.transactionNumber}
+                                  </span>
+                                  <Badge
+                                    variant={sale.paymentStatus === 'partial' ? 'warning' : 'danger'}
+                                  >
+                                    {sale.paymentStatus === 'partial' ? 'Sebagian' : 'Belum Bayar'}
+                                  </Badge>
+                                </div>
+                                <div className="text-caption text-text-secondary mt-0.5">
+                                  Tgl: {sale.transactionDate} • Total: {formatRupiah(sale.totalAmount)}
+                                </div>
+                                <div className="text-caption text-text-muted">
+                                  Sudah dibayar: {formatRupiah(sale.amountPaid)}
+                                </div>
+
+                                {/* Items toggle button */}
+                                {sale.items && sale.items.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={toggleItems}
+                                    className="inline-flex items-center gap-1.5 mt-1.5 py-1 px-2 rounded-lg bg-surface border border-border/80 text-caption font-semibold text-primary hover:bg-surface-subtle transition-colors w-fit select-none"
+                                  >
+                                    <ShoppingBag className="w-3.5 h-3.5" />
+                                    <span>
+                                      {sale.items.length} produk ({totalItemQty} item)
+                                    </span>
+                                    <ChevronDown
+                                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                        isItemsExpanded ? 'rotate-180' : ''
+                                      }`}
+                                    />
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="flex flex-col items-end gap-1.5 shrink-0 self-start pt-0.5">
+                                <span className="text-body-medium font-bold text-amber-600 dark:text-amber-400">
+                                  {formatRupiah(sale.amountDue)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenPayment(customer.customerName, sale)}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark active:scale-95 transition-all shadow-2xs"
+                                >
+                                  <Banknote className="w-3.5 h-3.5" />
+                                  <span>Bayar</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Collapsible Purchased Items List */}
+                            {isItemsExpanded && sale.items && sale.items.length > 0 && (
+                              <div className="px-3.5 pb-3.5 pt-0">
+                                <div className="p-2.5 rounded-xl bg-surface border border-border/80 flex flex-col gap-2 shadow-2xs animate-in fade-in-50 duration-150">
+                                  <div className="flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                                      Barang yang Dibeli
+                                    </span>
+                                    <span className="text-[11px] text-text-muted">
+                                      Rincian Asli Nota
+                                    </span>
+                                  </div>
+
+                                  <div className="divide-y divide-border/60">
+                                    {sale.items.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="py-1.5 px-1 flex items-start justify-between gap-2 text-small"
+                                      >
+                                        <div className="flex flex-col min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="font-medium text-text">
+                                              {item.productName}
+                                            </span>
+                                            {item.mode === 'brewed' ? (
+                                              <Badge variant="primary" className="text-[10px] px-1 py-0">
+                                                Diseduh
+                                              </Badge>
+                                            ) : (
+                                              <Badge variant="default" className="text-[10px] px-1 py-0">
+                                                Mentah
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <span className="text-caption text-text-muted mt-0.5">
+                                            {item.quantity} {item.unit} × {formatRupiah(item.unitPrice)}
+                                          </span>
+                                        </div>
+                                        <span className="font-semibold text-text shrink-0 text-caption pt-0.5">
+                                          {formatRupiah(item.subtotal)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

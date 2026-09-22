@@ -299,6 +299,9 @@ export async function getReceivableSummary(): Promise<ReceivableSummary[]> {
       amountDue: { gt: 0 },
       customerName: { not: null },
     },
+    include: {
+      items: true,
+    },
     orderBy: [
       { transactionDate: 'asc' },
       { createdAt: 'asc' },
@@ -319,6 +322,7 @@ export async function getReceivableSummary(): Promise<ReceivableSummary[]> {
       amountPaid: sale.amountPaid,
       amountDue: sale.amountDue,
       paymentStatus: sale.paymentStatus as PaymentStatus,
+      items: sale.items.map(toDomainSaleItem),
     };
 
     if (existing) {
