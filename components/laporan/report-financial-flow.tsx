@@ -165,8 +165,8 @@ export function ReportFinancialFlow({ summary }: ReportFinancialFlowProps) {
         </div>
       </div>
 
-      {/* Cash Collection Breakdown — conditional on receivables */}
-      {hasReceivables && (
+      {/* Cash Collection Breakdown — conditional on receivables or opening cash */}
+      {(hasReceivables || summary.periodOpeningCash > 0) && (
         <>
           <div className="border-t border-border" />
           <div>
@@ -175,6 +175,19 @@ export function ReportFinancialFlow({ summary }: ReportFinancialFlowProps) {
               <span className="text-small font-bold text-text">Komposisi Penerimaan Kas</span>
             </div>
             <div className="flex flex-col gap-2">
+              {/* Saldo Awal Kas Periode if present */}
+              {summary.periodOpeningCash > 0 && (
+                <div className="p-2.5 rounded-lg bg-surface-subtle border border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="w-4 h-4 text-text-secondary stroke-[2]" />
+                    <span className="text-small text-text">Saldo Awal Kasir (Periode)</span>
+                  </div>
+                  <span className="text-small font-bold text-text">
+                    {formatRupiah(summary.periodOpeningCash)}
+                  </span>
+                </div>
+              )}
+
               {/* Cash at POS */}
               <div className="p-2.5 rounded-lg bg-primary-soft/20 border border-primary/15 flex items-center justify-between">
                 <div className="flex items-center gap-2">

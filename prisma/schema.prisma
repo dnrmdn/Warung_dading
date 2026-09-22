@@ -265,8 +265,31 @@ model User {
 
   sessions      Session[]
   accounts      Account[]
+  dailyCashBalances DailyCashBalance[]
 
   @@map("user")
+}
+
+// ─── DailyCashBalance (Kas Harian & Saldo Awal) ──────────────────────────────
+// Records opening cash drawer balance (uang modal / receh kembalian) per business day.
+// Uniquely identified by date to guarantee exactly one opening entry per calendar day.
+
+model DailyCashBalance {
+  id              String    @id @default(uuid())
+  date            DateTime  @unique @db.Date
+  openingCash     Int
+  openingNote     String?
+  openedByUserId  String?
+  openedByUser    User?     @relation(fields: [openedByUserId], references: [id], onDelete: SetNull)
+
+  closingCash     Int?
+  closingNote     String?
+  closedAt        DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([date])
 }
 
 model Session {

@@ -12,14 +12,19 @@ import { CartBottomSheet } from '@/components/jual/cart-bottom-sheet';
 import { PaymentSheet } from '@/components/jual/payment-sheet';
 import { createSaleAction } from '@/app/actions/sales';
 import { formatRupiah } from '@/lib/format';
-import { ShoppingBag, Search as SearchIcon } from 'lucide-react';
+import { ShoppingBag, Search as SearchIcon, AlertCircle } from 'lucide-react';
 
 interface PosContainerProps {
   initialProducts: Product[];
   categories: string[];
+  isOpeningCashInitialized?: boolean;
 }
 
-export function PosContainer({ initialProducts, categories }: PosContainerProps) {
+export function PosContainer({
+  initialProducts,
+  categories,
+  isOpeningCashInitialized = true,
+}: PosContainerProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -221,6 +226,23 @@ export function PosContainer({ initialProducts, categories }: PosContainerProps)
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
       />
+
+      {/* Non-blocking prompt if opening cash has not been entered */}
+      {!isOpeningCashInitialized && (
+        <div className="mx-3 mt-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-2 text-caption text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-1.5 truncate">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Saldo awal kasir belum ditentukan</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="text-[11px] font-bold underline shrink-0 hover:text-amber-900 dark:hover:text-amber-200"
+          >
+            Isi di Dashboard
+          </button>
+        </div>
+      )}
 
       {/* Product Grid */}
       <div className="flex-1 min-w-0 w-full pb-24 overflow-x-hidden">

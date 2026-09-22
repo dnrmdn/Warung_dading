@@ -49,6 +49,7 @@ export interface ReportSummary {
   totalInitialAmountDue: number;       // Piutang Terbentuk: SUM(initialAmountDue) for period sales
   totalSettlementCollected: number;    // Cash collected via ReceivablePayment.paidAt in period
   periodCashInflow: number;            // totalInitialAmountPaid + totalSettlementCollected
+  periodOpeningCash: number;           // Opening cash anchor for the first day of the period
   paymentStatusBreakdown: PaymentStatusBreakdown;
 }
 
@@ -280,6 +281,7 @@ export async function getReportData(filter?: ReportFilter): Promise<ReportData> 
     periodSalesForStatus,
     periodSnapshots,
     allProductIcons,
+    startDayCashBalance,
   ] = await Promise.all([
     // Sales Totals (including immutable initial snapshot fields for historical reporting)
     prisma.sale.aggregate({
@@ -479,6 +481,12 @@ export async function getReportData(filter?: ReportFilter): Promise<ReportData> 
     prisma.product.findMany({
       select: { id: true, iconName: true },
     }),
+
+    // Opening cash balance of the starting day of the period
+    prisma.dailyCashBalance.findUnique({
+      where: { date: startDateUtc },
+      select: { openingCash: true },
+    }),
   ]);
 
   // 2. Compute Summary Financials
@@ -501,6 +509,7 @@ export async function getReportData(filter?: ReportFilter): Promise<ReportData> 
   const totalInitialAmountDue  = salesAggregate._sum.initialAmountDue  ?? 0;     // Piutang Terbentuk at sale creation
   const totalSettlementCollected = settlementAggregate._sum.amount ?? 0;         // Cash via ReceivablePayment.paidAt
   const periodCashInflow = totalInitialAmountPaid + totalSettlementCollected;    // No double counting
+  const periodOpeningCash = startDayCashBalance?.openingCash ?? 0;
 
   // 2c. Build Payment Status Breakdown
   // Status is DERIVED from the immutable initial snapshot (initialAmountPaid / initialAmountDue),
@@ -549,6 +558,7 @@ export async function getReportData(filter?: ReportFilter): Promise<ReportData> 
     totalInitialAmountDue,
     totalSettlementCollected,
     periodCashInflow,
+    periodOpeningCash,
     paymentStatusBreakdown,
   };
 

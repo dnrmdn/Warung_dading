@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 import { getDashboardStats } from '@/lib/services/dashboard';
+import { getTodayCashPosition } from '@/lib/services/cash';
+import { CashPositionCard } from '@/components/dashboard/cash-position-card';
 import { formatRupiah } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { ProductIcon } from '@/components/ui/product-icon';
@@ -30,9 +32,10 @@ export default async function HomePage() {
     topProducts,
     lowStockProducts,
     totalProductCount,
-  }] = await Promise.all([
+  }, cashPosition] = await Promise.all([
     enforceAdminPage(),
     getDashboardStats(),
+    getTodayCashPosition(),
   ]);
 
   return (
@@ -49,6 +52,9 @@ export default async function HomePage() {
       />
 
       <div className="flex flex-col gap-4 p-4">
+        {/* Cash Drawer Position Card */}
+        <CashPositionCard cashPosition={cashPosition} />
+
         {/* Today's Metrics Overview Card */}
         <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
           <div className="flex items-center justify-between">
