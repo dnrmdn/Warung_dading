@@ -75,6 +75,7 @@ export async function getCategoriesAction(): Promise<ActionResult<string[]>> {
 
 export async function getProductsAction(options?: {
   includeInactive?: boolean;
+  includeRecipe?: boolean;
 }): Promise<ActionResult<Product[]>> {
   const authCheck = await requireAdmin();
   if (!authCheck.success) return authCheck.errorResult;

@@ -9,8 +9,10 @@ interface ProductDetailPageProps {
 }
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  await enforceAdminPage();
-  const { id } = await params;
+  const [, { id }] = await Promise.all([
+    enforceAdminPage(),
+    params,
+  ]);
 
   // Both fetches are independent of each other — run them concurrently.
   const [product, salesHistory] = await Promise.all([

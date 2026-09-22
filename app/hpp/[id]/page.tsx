@@ -8,8 +8,10 @@ interface HPPPageProps {
 }
 
 export default async function HPPPage({ params }: HPPPageProps) {
-  await enforceAdminPage();
-  const { id } = await params;
+  const [, { id }] = await Promise.all([
+    enforceAdminPage(),
+    params,
+  ]);
 
   // Fetch the target product and the picker list concurrently — they are
   // independent of each other and only both need the auth check to complete.

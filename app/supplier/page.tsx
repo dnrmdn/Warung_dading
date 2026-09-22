@@ -10,8 +10,10 @@ import { Plus, Users } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function SupplierPage() {
-  await enforceAdminPage();
-  const suppliers = await getSuppliers();
+  const [, suppliers] = await Promise.all([
+    enforceAdminPage(),
+    getSuppliers(),
+  ]);
 
   const activeCount = suppliers.filter((s) => s.isActive).length;
 

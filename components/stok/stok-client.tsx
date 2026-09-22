@@ -4,13 +4,13 @@ import React, { useState, useMemo } from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 import { SearchBar } from '@/components/ui/search-bar';
-import { StockFilterTabs, StockFilterTab } from '@/components/stok/stock-filter-tabs';
+import { CategoryChips } from '@/components/jual/category-chips';
 import { StockItemRow } from '@/components/stok/stock-item-row';
 import { ProductFormSheet } from '@/components/stok/product-form-sheet';
 import { StockAdjustSheet } from '@/components/stok/stock-adjust-sheet';
 import { DeleteConfirmSheet } from '@/components/stok/delete-confirm-sheet';
 import { deleteProductAction } from '@/app/actions/products';
-import { Product } from '@/types/warung';
+import { Product, CategoryItem } from '@/types/warung';
 import { AlertTriangle, Package, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -18,14 +18,14 @@ type StockStatusFilter = 'all' | 'low';
 
 interface StokClientProps {
   initialProducts: Product[];
-  categories: string[];
+  categories: CategoryItem[];
   initialStockStatus: StockStatusFilter;
 }
 
 export function StokClient({ initialProducts, categories, initialStockStatus }: StokClientProps) {
   const router = useRouter();
 
-  const [selectedTab, setSelectedTab] = useState<StockFilterTab>('semua');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('Semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [stockStatusFilter, setStockStatusFilter] = useState<StockStatusFilter>(initialStockStatus);
 
@@ -95,20 +95,43 @@ export function StokClient({ initialProducts, categories, initialStockStatus }: 
     [initialProducts]
   );
 
-  // Filter products by inventory type tab, stock status, and search query (AND)
+  // Category list with synthetic 'Semua' option
+  const categoryOptions = useMemo(() => [
+    { id: 'Semua', name: 'Semua' },
+    ...categories,
+  ], [categories]);
+
+  // Category names for display in CategoryChips
+  const chipNames = useMemo(() => categoryOptions.map((c) => c.name), [categoryOptions]);
+
+  // Map categoryId <-> categoryName
+  const selectedCategoryName = useMemo(() => {
+    const matched = categoryOptions.find((c) => c.id === selectedCategoryId);
+    return matched ? matched.name : 'Semua';
+  }, [categoryOptions, selectedCategoryId]);
+
+  const handleSelectCategoryName = (categoryName: string) => {
+    const matched = categoryOptions.find((c) => c.name === categoryName);
+    setSelectedCategoryId(matched ? matched.id : 'Semua');
+  };
+
+  // Category names array for ProductFormSheet (string[])
+  const categoryNames = useMemo(() => categories.map((c) => c.name), [categories]);
+
+  // Filter products by categoryId, stock status, and search query (AND)
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
-      const matchType =
-        selectedTab === 'semua' || product.inventoryType === selectedTab;
+      const matchCategory =
+        selectedCategoryId === 'Semua' || product.categoryId === selectedCategoryId;
       const matchSearch =
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.family.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStockStatus =
         stockStatusFilter === 'all' ||
         (stockStatusFilter === 'low' && product.stock <= product.minStock);
-      return matchType && matchSearch && matchStockStatus;
+      return matchCategory && matchSearch && matchStockStatus;
     });
-  }, [initialProducts, selectedTab, searchQuery, stockStatusFilter]);
+  }, [initialProducts, selectedCategoryId, searchQuery, stockStatusFilter]);
 
   return (
     <AppShell>
@@ -136,14 +159,16 @@ export function StokClient({ initialProducts, categories, initialStockStatus }: 
           placeholder="Cari item stok..."
         />
 
-        {/* Inventory Type Filter Tabs (Semua / Barang / Bahan / Produk jadi) */}
-        <StockFilterTabs
-          selectedTab={selectedTab}
-          onSelectTab={setSelectedTab}
+        {/* Category Filter Chips */}
+        <CategoryChips
+          categories={chipNames}
+          selectedCategory={selectedCategoryName}
+          onSelectCategory={handleSelectCategoryName}
+          className="px-0 py-0 border-b-0 bg-transparent sticky-none static"
         />
 
         {/* Low Stock Warning Banner */}
-        {lowStockCount > 0 && selectedTab === 'semua' && !searchQuery && (
+        {lowStockCount > 0 && selectedCategoryId === 'Semua' && !searchQuery && (
           <div className="flex items-center gap-2.5 p-3 rounded-xl bg-warning-soft border border-warning/30 text-warning text-small">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <div className="flex-1">
@@ -185,8 +210,9 @@ export function StokClient({ initialProducts, categories, initialStockStatus }: 
         }}
         mode={formMode}
         product={selectedProduct}
-        categories={categories}
+        categories={categoryNames}
         onSuccess={() => router.refresh()}
+        onAdjustStock={handleOpenAdjustStock}
       />
 
       {/* Stock Adjustment Bottom Sheet (+ Tambah / - Kurang) */}

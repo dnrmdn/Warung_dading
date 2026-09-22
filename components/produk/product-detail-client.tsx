@@ -9,7 +9,8 @@ import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 import { ProductIcon } from '@/components/ui/product-icon';
 import { Badge } from '@/components/ui/badge';
-import { formatRupiah } from '@/lib/format';
+import { formatRupiah, formatMargin } from '@/lib/format';
+import { getDualModeHPP } from '@/lib/hpp';
 import {
   Calculator,
   ChevronRight,
@@ -34,22 +35,7 @@ export function ProductDetailClient({
 
   const product = initialProduct;
   const isLowStock = product.stock <= product.minStock;
-  const derivedHpp =
-    product.hppComponents && product.hppComponents.length > 0
-      ? product.hppComponents.reduce(
-          (sum, c) => sum + c.quantity * c.unitCost,
-          0
-        )
-      : product.costPrice;
-
-  const grossProfit =
-    product.price !== undefined && derivedHpp !== undefined
-      ? product.price - derivedHpp
-      : undefined;
-  const marginPercent =
-    grossProfit !== undefined && product.price
-      ? Math.round((grossProfit / product.price) * 100)
-      : undefined;
+  const dualHpp = getDualModeHPP(product);
 
   const handleToggleStatus = () => {
     startTransition(async () => {
@@ -97,50 +83,105 @@ export function ProductDetailClient({
         <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3">
           <h3 className="text-body-medium font-semibold text-text">Harga & Margin</h3>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="p-3 rounded-xl bg-surface-subtle border border-border/60">
-              <span className="text-caption text-text-secondary block">Harga Jual</span>
-              <span className="text-h3 font-bold text-primary block mt-0.5">
-                {formatRupiah(product.price)}
-              </span>
-              <span className="text-caption text-text-muted mt-0.5 block">
-                / {product.unit}
-              </span>
-            </div>
+          {dualHpp.brewed ? (
+            /* Dual Mode View: Direct & Brewed */
+            <div className="flex flex-col gap-2.5">
+              {/* Direct Mode */}
+              <div className="p-3 rounded-xl bg-surface-subtle border border-border/70 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-caption font-semibold text-text uppercase tracking-wide">
+                    Jual Langsung (Mentah)
+                  </span>
+                  <span className="text-caption font-bold text-success">
+                    Margin {formatMargin(dualHpp.direct.marginPercent)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/40 text-center">
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Harga Jual</span>
+                    <span className="text-small font-bold text-primary block mt-0.5">
+                      {formatRupiah(dualHpp.direct.sellingPrice)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">HPP</span>
+                    <span className="text-small font-bold text-text block mt-0.5">
+                      {formatRupiah(dualHpp.direct.unitHpp)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Laba Kotor</span>
+                    <span className="text-small font-bold text-success block mt-0.5">
+                      {formatRupiah(dualHpp.direct.grossProfit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-            <div className="p-3 rounded-xl bg-surface-subtle border border-border/60">
-              <span className="text-caption text-text-secondary block">HPP Pokok</span>
-              <span className="text-h3 font-bold text-text block mt-0.5">
-                {formatRupiah(derivedHpp)}
-              </span>
-              <span className="text-caption text-text-muted mt-0.5 block">
-                Modal dasar
-              </span>
+              {/* Brewed Mode */}
+              <div className="p-3 rounded-xl bg-primary-soft/20 border border-primary/20 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-caption font-semibold text-primary-dark uppercase tracking-wide">
+                    Diseduh (Siap Saji)
+                  </span>
+                  <span className="text-caption font-bold text-success">
+                    Margin {formatMargin(dualHpp.brewed.marginPercent)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-primary/20 text-center">
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Harga Jual</span>
+                    <span className="text-small font-bold text-primary block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.sellingPrice)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">HPP</span>
+                    <span className="text-small font-bold text-text block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.unitHpp)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Laba Kotor</span>
+                    <span className="text-small font-bold text-success block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.grossProfit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* Single Mode View */
+            <div className="flex flex-col gap-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 rounded-xl bg-surface-subtle border border-border/60">
+                  <span className="text-caption text-text-secondary block">Harga Jual</span>
+                  <span className="text-h3 font-bold text-primary block mt-0.5">
+                    {formatRupiah(dualHpp.direct.sellingPrice)}
+                  </span>
+                  <span className="text-caption text-text-muted mt-0.5 block">
+                    / {product.unit}
+                  </span>
+                </div>
 
-          {/* Prepared Selling Price if available */}
-          {product.preparedPrice && (
-            <div className="p-3 rounded-xl bg-primary-soft/20 border border-primary/20 flex items-center justify-between">
-              <div>
-                <span className="text-caption font-medium text-primary-dark block">
-                  Harga Diseduh / Masak
-                </span>
-                <span className="text-body-medium font-bold text-primary block mt-0.5">
-                  {formatRupiah(product.preparedPrice)}
+                <div className="p-3 rounded-xl bg-surface-subtle border border-border/60">
+                  <span className="text-caption text-text-secondary block">HPP Pokok</span>
+                  <span className="text-h3 font-bold text-text block mt-0.5">
+                    {formatRupiah(dualHpp.direct.unitHpp)}
+                  </span>
+                  <span className="text-caption text-text-muted mt-0.5 block">
+                    Modal dasar
+                  </span>
+                </div>
+              </div>
+
+              {/* Estimated Gross Profit Summary */}
+              <div className="flex items-center justify-between pt-2 border-t border-border/60 text-small">
+                <span className="text-text-secondary">Estimasi Laba Kotor:</span>
+                <span className="font-bold text-success">
+                  {formatRupiah(dualHpp.direct.grossProfit)} ({formatMargin(dualHpp.direct.marginPercent)})
                 </span>
               </div>
-              <Badge variant="primary">Siap Saji</Badge>
-            </div>
-          )}
-
-          {/* Estimated Gross Profit Summary */}
-          {grossProfit !== undefined && marginPercent !== undefined && (
-            <div className="flex items-center justify-between pt-2 border-t border-border/60 text-small">
-              <span className="text-text-secondary">Estimasi Laba Kotor:</span>
-              <span className="font-bold text-success">
-                {formatRupiah(grossProfit)} ({marginPercent}%)
-              </span>
             </div>
           )}
         </div>

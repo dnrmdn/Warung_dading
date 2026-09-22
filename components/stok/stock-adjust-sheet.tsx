@@ -5,7 +5,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Product, StockAdjustmentType, StockAdjustmentReason } from '@/types/warung';
 import { adjustStockAction } from '@/app/actions/products';
 import { ProductIcon } from '@/components/ui/product-icon';
-import { AlertCircle, Plus, Minus, ArrowRight } from 'lucide-react';
+import { AlertCircle, Plus, Minus, ArrowRight, SlidersHorizontal } from 'lucide-react';
 
 interface StockAdjustSheetProps {
   isOpen: boolean;
@@ -61,9 +61,12 @@ export function StockAdjustSheet({
     const trimmed = amount.trim();
     if (!trimmed) return null;
     const num = Number(trimmed);
-    if (isNaN(num) || !Number.isInteger(num) || num <= 0) return null;
-    return num;
-  }, [amount]);
+    if (isNaN(num) || !Number.isInteger(num)) return null;
+    if (type === 'set') {
+      return num >= 0 ? num : null;
+    }
+    return num > 0 ? num : null;
+  }, [amount, type]);
 
   const calculatedNewStock = useMemo(() => {
     if (parsedAmount === null) return null;
@@ -72,6 +75,9 @@ export function StockAdjustSheet({
     }
     if (type === 'reduce') {
       return currentStock - parsedAmount;
+    }
+    if (type === 'set') {
+      return parsedAmount;
     }
     return null;
   }, [currentStock, parsedAmount, type]);
@@ -87,14 +93,16 @@ export function StockAdjustSheet({
     // 1. Amount validation
     const trimmedAmount = amount.trim();
     if (!trimmedAmount) {
-      newErrors.amount = 'Jumlah penyesuaian stok wajib diisi';
+      newErrors.amount = type === 'set' ? 'Jumlah stok fisik baru wajib diisi' : 'Jumlah penyesuaian stok wajib diisi';
     } else {
       const num = Number(trimmedAmount);
       if (isNaN(num)) {
         newErrors.amount = 'Jumlah harus berupa angka yang valid';
       } else if (!Number.isInteger(num)) {
         newErrors.amount = 'Jumlah harus berupa bilangan bulat (tanpa desimal)';
-      } else if (num <= 0) {
+      } else if (type === 'set' && num < 0) {
+        newErrors.amount = 'Nilai stok baru tidak boleh negatif';
+      } else if (type !== 'set' && num <= 0) {
         newErrors.amount = 'Jumlah penyesuaian harus lebih besar dari 0';
       } else if (type === 'reduce' && num > currentStock) {
         newErrors.amount = `Jumlah pengurangan (${num} ${unit}) melebihi stok yang tersedia (${currentStock} ${unit})`;
@@ -179,12 +187,12 @@ export function StockAdjustSheet({
           </div>
         </div>
 
-        {/* Adjustment Type Selector: + Tambah vs - Kurang */}
+        {/* Adjustment Type Selector: + Tambah vs - Kurang vs = Set Stok */}
         <div>
           <label className="text-caption font-semibold text-text-secondary block mb-1.5 uppercase tracking-wider">
             Jenis Penyesuaian
           </label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => {
@@ -193,14 +201,14 @@ export function StockAdjustSheet({
                   setReason('pembelian');
                 }
               }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-small font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl border text-small font-semibold transition-all ${
                 type === 'add'
                   ? 'bg-success text-white border-success shadow-xs'
                   : 'bg-surface border-border text-text-secondary hover:text-text'
               }`}
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Tambah Stok</span>
+              <Plus className="w-4 h-4 stroke-[2.5] shrink-0" />
+              <span>Tambah</span>
             </button>
 
             <button
@@ -211,14 +219,30 @@ export function StockAdjustSheet({
                   setReason('rusak_kadaluarsa');
                 }
               }}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-small font-semibold transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl border text-small font-semibold transition-all ${
                 type === 'reduce'
                   ? 'bg-danger text-white border-danger shadow-xs'
                   : 'bg-surface border-border text-text-secondary hover:text-text'
               }`}
             >
-              <Minus className="w-4 h-4 stroke-[2.5]" />
-              <span>Kurang Stok</span>
+              <Minus className="w-4 h-4 stroke-[2.5] shrink-0" />
+              <span>Kurang</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setType('set');
+                setReason('koreksi_opname');
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl border text-small font-semibold transition-all ${
+                type === 'set'
+                  ? 'bg-primary text-white border-primary shadow-xs'
+                  : 'bg-surface border-border text-text-secondary hover:text-text'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4 stroke-[2.2] shrink-0" />
+              <span>Set Stok</span>
             </button>
           </div>
         </div>
@@ -226,11 +250,11 @@ export function StockAdjustSheet({
         {/* Quantity Input */}
         <div>
           <label className="text-caption font-semibold text-text-secondary block mb-1">
-            Jumlah ({unit}) <span className="text-danger">*</span>
+            {type === 'set' ? `Stok Fisik Baru (${unit})` : `Jumlah (${unit})`} <span className="text-danger">*</span>
           </label>
           <input
             type="number"
-            min="1"
+            min={type === 'set' ? '0' : '1'}
             step="1"
             value={amount}
             onChange={(e) => {
@@ -243,8 +267,7 @@ export function StockAdjustSheet({
                 });
               }
             }}
-            placeholder="Masukkan jumlah..."
-
+            placeholder={type === 'set' ? 'Masukkan jumlah stok akhir...' : 'Masukkan jumlah...'}
             className="w-full h-10 px-3 bg-surface border border-border rounded-xl text-body font-medium text-text placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
           {errors.amount && (
@@ -311,9 +334,19 @@ export function StockAdjustSheet({
                 <span className="text-success font-bold text-body">
                   +{parsedAmount !== null ? parsedAmount : '0'}
                 </span>
-              ) : (
+              ) : type === 'reduce' ? (
                 <span className="text-danger font-bold text-body">
                   -{parsedAmount !== null ? parsedAmount : '0'}
+                </span>
+              ) : (
+                <span className="text-primary font-bold text-body">
+                  {parsedAmount !== null
+                    ? parsedAmount === currentStock
+                      ? '±0'
+                      : parsedAmount > currentStock
+                      ? `+${parsedAmount - currentStock}`
+                      : `-${currentStock - parsedAmount}`
+                    : 'Set'}
                 </span>
               )}
               <ArrowRight className="w-4 h-4 text-text-muted mx-1" />

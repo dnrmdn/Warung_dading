@@ -28,6 +28,17 @@ export function PaymentSheet({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Reset all state whenever the sheet is opened or closed
+  React.useEffect(() => {
+    if (isOpen) {
+      setPaymentAmountStr('');
+      setCustomerName('');
+      setCustomerPhone('');
+      setError(null);
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
   const paymentAmount = paymentAmountStr === '' ? totalAmount : Number(paymentAmountStr) || 0;
   const changeAmount = paymentAmount - totalAmount;
   const isUnderpaid = paymentAmount < totalAmount;
@@ -63,7 +74,8 @@ export function PaymentSheet({
         customerName.trim() || undefined,
         customerPhone.trim() || undefined
       );
-      // Let parent handle closing on success
+      // Reset isSubmitting on success in case parent keeps sheet mounted
+      setIsSubmitting(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat menyimpan transaksi.');
       setIsSubmitting(false);
@@ -127,17 +139,17 @@ export function PaymentSheet({
             </button>
             <button
               type="button"
-              onClick={() => handleQuickAmount(50000)}
+              onClick={() => handleQuickAmount(5000)}
               className="py-2 rounded-lg bg-surface-subtle border border-border text-caption font-medium text-text hover:bg-border transition-colors"
             >
-              50k
+              5k
             </button>
             <button
               type="button"
-              onClick={() => handleQuickAmount(100000)}
+              onClick={() => handleQuickAmount(10000)}
               className="py-2 rounded-lg bg-surface-subtle border border-border text-caption font-medium text-text hover:bg-border transition-colors"
             >
-              100k
+              10k
             </button>
           </div>
         </div>

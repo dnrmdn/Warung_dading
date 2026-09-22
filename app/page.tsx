@@ -19,9 +19,7 @@ import {
 } from 'lucide-react';
 
 export default async function HomePage() {
-  await enforceAdminPage();
-
-  const {
+  const [, {
     todayRevenue,
     todayProfit,
     todayTransactions,
@@ -32,7 +30,10 @@ export default async function HomePage() {
     topProducts,
     lowStockProducts,
     totalProductCount,
-  } = await getDashboardStats();
+  }] = await Promise.all([
+    enforceAdminPage(),
+    getDashboardStats(),
+  ]);
 
   return (
     <AppShell>
@@ -86,8 +87,11 @@ export default async function HomePage() {
             </div>
 
             {/* Total Transaksi */}
-            <div className="p-2.5 rounded-xl bg-surface-subtle flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-soft text-primary-dark shrink-0">
+            <Link
+              href="/transaksi"
+              className="p-2.5 rounded-xl bg-surface-subtle hover:bg-surface-subtle/80 flex items-center gap-2.5 transition-all active:scale-[0.98] group"
+            >
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-soft text-primary-dark group-hover:scale-105 transition-transform shrink-0">
                 <Receipt className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -98,7 +102,7 @@ export default async function HomePage() {
                   {todayTransactions} nota
                 </span>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 

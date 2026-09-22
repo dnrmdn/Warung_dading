@@ -8,8 +8,10 @@ import { PiutangListClient } from '@/components/piutang/piutang-list-client';
 export const dynamic = 'force-dynamic';
 
 export default async function PiutangPage() {
-  await enforceAdminPage();
-  const summary = await getReceivableSummary();
+  const [, summary] = await Promise.all([
+    enforceAdminPage(),
+    getReceivableSummary(),
+  ]);
 
   return (
     <AppShell>

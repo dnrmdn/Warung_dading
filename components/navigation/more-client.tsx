@@ -20,6 +20,7 @@ import {
   Loader2,
   Shield,
   CreditCard,
+  ScrollText,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -103,6 +104,12 @@ export function MoreClient({ initialUser }: MoreClientProps) {
           label: 'Piutang Pelanggan',
           description: 'Daftar tagihan belum lunas & pelunasan',
           href: '/piutang',
+        },
+        {
+          icon: ScrollText,
+          label: 'Transaksi',
+          description: 'Riwayat transaksi penjualan hari ini',
+          href: '/transaksi',
         },
       ];
 

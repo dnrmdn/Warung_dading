@@ -19,12 +19,6 @@ export function StockItemRow({ product, onEdit, onAdjustStock, onDelete }: Stock
   const isLowStock = product.stock <= product.minStock;
   const isOutOfStock = product.stock === 0;
 
-  const inventoryTypeLabel = {
-    barang: 'Barang',
-    bahan: 'Bahan',
-    produk_jadi: 'Produk Jadi',
-  }[product.inventoryType];
-
   return (
     <div className="w-full flex items-center justify-between p-3 bg-surface rounded-xl border border-border/80 hover:border-primary/50 hover:shadow-2xs transition-all gap-2 group">
       {/* Product Details Area (Clickable Link to Product Detail) */}
@@ -42,7 +36,7 @@ export function StockItemRow({ product, onEdit, onAdjustStock, onDelete }: Stock
               {product.name}
             </h4>
             <Badge variant="default" className="text-[10px] py-0 px-1.5">
-              {inventoryTypeLabel}
+              {product.category}
             </Badge>
           </div>
 

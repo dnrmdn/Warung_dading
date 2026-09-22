@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { Product, InventoryType } from '@/types/warung';
+import { Product } from '@/types/warung';
 import { createProductAction, updateProductAction } from '@/app/actions/products';
 import { ProductIcon } from '@/components/ui/product-icon';
 import { AlertCircle } from 'lucide-react';
@@ -14,6 +14,7 @@ interface ProductFormSheetProps {
   product?: Product | null;
   categories: string[];
   onSuccess: () => void;
+  onAdjustStock?: (product: Product) => void;
 }
 
 const AVAILABLE_ICONS = [
@@ -35,13 +36,13 @@ export function ProductFormSheet({
   product,
   categories,
   onSuccess,
+  onAdjustStock,
 }: ProductFormSheetProps) {
   // Form states
   const [name, setName] = useState('');
   const [variant, setVariant] = useState('');
   const [family, setFamily] = useState('');
   const [category, setCategory] = useState('');
-  const [inventoryType, setInventoryType] = useState<InventoryType>('barang');
   const [price, setPrice] = useState('');
   const [preparedPrice, setPreparedPrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
@@ -65,7 +66,6 @@ export function ProductFormSheet({
         setVariant(product.variant || '');
         setFamily(product.family || '');
         setCategory(product.category || '');
-        setInventoryType(product.inventoryType || 'barang');
         setPrice(product.price !== undefined ? String(product.price) : '');
         setPreparedPrice(
           product.preparedPrice !== undefined ? String(product.preparedPrice) : ''
@@ -85,7 +85,6 @@ export function ProductFormSheet({
         setVariant('');
         setFamily('');
         setCategory('');
-        setInventoryType('barang');
         setPrice('');
         setPreparedPrice('');
         setCostPrice('');
@@ -167,7 +166,6 @@ export function ProductFormSheet({
           variant: variant.trim() || undefined,
           family: family.trim() || cleanName,
           category: cleanCategory,
-          inventoryType,
           price: parsedPrice,
           preparedPrice: parsedPreparedPrice,
           costPrice: parsedCostPrice,
@@ -190,7 +188,6 @@ export function ProductFormSheet({
           variant: variant.trim() || undefined,
           family: family.trim() || cleanName,
           category: cleanCategory,
-          inventoryType,
           price: parsedPrice,
           preparedPrice: parsedPreparedPrice,
           costPrice: parsedCostPrice,
@@ -360,34 +357,6 @@ export function ProductFormSheet({
               ))}
             </div>
           </div>
-
-          <div>
-            <label className="text-caption font-medium text-text block mb-1">
-              Tipe Inventaris
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {(
-                [
-                  { key: 'barang', label: 'Barang' },
-                  { key: 'bahan', label: 'Bahan' },
-                  { key: 'produk_jadi', label: 'Produk Jadi' },
-                ] as const
-              ).map((type) => (
-                <button
-                  key={type.key}
-                  type="button"
-                  onClick={() => setInventoryType(type.key)}
-                  className={`py-1.5 px-2 rounded-xl text-[11px] font-medium border text-center transition-all ${
-                    inventoryType === type.key
-                      ? 'bg-primary text-white border-primary shadow-xs'
-                      : 'bg-surface border-border text-text-secondary hover:text-text'
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* SECTION 3: Harga & HPP */}
@@ -526,9 +495,22 @@ export function ProductFormSheet({
                   {stock} {unit}
                 </span>
               </div>
-              <span className="text-[10px] text-text-muted bg-surface px-2 py-0.5 rounded-md border border-border/50">
-                Ubah via Penyesuaian Stok
-              </span>
+              {onAdjustStock && product ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onAdjustStock(product);
+                  }}
+                  className="text-[11px] font-medium text-primary hover:text-primary-dark bg-surface hover:bg-surface-subtle px-2.5 py-1 rounded-lg border border-border hover:border-primary/50 shadow-2xs transition-all active:scale-95"
+                >
+                  Ubah via Penyesuaian Stok
+                </button>
+              ) : (
+                <span className="text-[10px] text-text-muted bg-surface px-2 py-0.5 rounded-md border border-border/50">
+                  Ubah via Penyesuaian Stok
+                </span>
+              )}
             </div>
           )}
         </div>

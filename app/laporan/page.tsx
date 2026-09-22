@@ -22,8 +22,10 @@ interface LaporanPageProps {
 }
 
 export default async function LaporanPage({ searchParams }: LaporanPageProps) {
-  await enforceReportPage();
-  const resolvedParams = await searchParams;
+  const [, resolvedParams] = await Promise.all([
+    enforceReportPage(),
+    searchParams,
+  ]);
 
   const period = (resolvedParams.period as ReportPeriod) || 'thisMonth';
   const startDate = resolvedParams.startDate;

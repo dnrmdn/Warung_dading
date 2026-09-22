@@ -33,7 +33,6 @@ model Product {
   family        String                        // TS: family: string (required)
   categoryId    String                        // FK → Category (maps TS category: string)
   category      Category @relation(fields: [categoryId], references: [id])
-  inventoryType String                        // TS: InventoryType = 'barang' | 'bahan' | 'produk_jadi'
   price         Int?                          // TS: price?: number — Rupiah Int, optional
   preparedPrice Int?                          // TS: preparedPrice?: number — optional
   costPrice     Int?                          // TS: costPrice?: number — optional

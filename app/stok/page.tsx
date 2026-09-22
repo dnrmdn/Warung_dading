@@ -1,5 +1,5 @@
 import { enforceAdminPage } from '@/lib/auth/page-guard';
-import { getProducts, getCategories } from '@/lib/services/products';
+import { getProducts, getCategoryItems } from '@/lib/services/products';
 import { StokClient } from '@/components/stok/stok-client';
 
 type StockStatusFilter = 'all' | 'low';
@@ -13,16 +13,15 @@ interface StokPageProps {
 }
 
 export default async function StokPage({ searchParams }: StokPageProps) {
-  await enforceAdminPage();
+  const [, resolvedParams, products, categories] = await Promise.all([
+    enforceAdminPage(),
+    searchParams,
+    getProducts({ includeInactive: false, includeRecipe: true }),
+    getCategoryItems(),
+  ]);
 
-  const resolvedParams = await searchParams;
   const initialStockStatus: StockStatusFilter =
     resolvedParams.filter === 'low' ? 'low' : 'all';
-
-  const [products, categories] = await Promise.all([
-    getProducts({ includeInactive: false }),
-    getCategories(),
-  ]);
 
   return (
     <StokClient

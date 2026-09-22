@@ -173,7 +173,7 @@ export function PosContainer({ initialProducts, categories }: PosContainerProps)
       if (result.success) {
         handleClearCart();
         setIsPaymentSheetOpen(false);
-        router.refresh();
+        router.replace('/');
       } else {
         alert(result.error?.message ?? 'Gagal membuat transaksi. Silakan coba lagi.');
       }
@@ -285,12 +285,14 @@ export function PosContainer({ initialProducts, categories }: PosContainerProps)
       />
 
       {/* Payment Bottom Sheet */}
-      <PaymentSheet
-        isOpen={isPaymentSheetOpen}
-        onClose={() => setIsPaymentSheetOpen(false)}
-        totalAmount={totalCartPrice}
-        onConfirm={handleConfirmPayment}
-      />
+      {isPaymentSheetOpen && (
+        <PaymentSheet
+          isOpen={isPaymentSheetOpen}
+          onClose={() => setIsPaymentSheetOpen(false)}
+          totalAmount={totalCartPrice}
+          onConfirm={handleConfirmPayment}
+        />
+      )}
     </div>
   );
 }

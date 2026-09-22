@@ -62,18 +62,20 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
   const targetDateStr = dateOverride ?? getTodayLocalDate();
   const targetDate = parseDateToUtcMidnight(targetDateStr);
 
-  // 1. Query all independent data in a single parallel wave:
+  // 1. Query all data in a single parallel wave — no second round trip needed.
   //    - today's sales metrics
   //    - global outstanding receivables
   //    - distinct unpaid customers
   //    - all-time top 4 products (no dependency on sales metrics)
-  //    - active product list for low-stock warnings and catalog count (no dependency on top-products)
+  //    - active product list for low-stock warnings, catalog count, and catalog attributes
+  //    - latest snapshot names per product (for top-product display names)
   const [
     todayAggregate,
     globalReceivableAggregate,
     outstandingCustomersGroup,
     topGrouped,
     activeProducts,
+    allRecentSnapshots,
   ] = await Promise.all([
     prisma.sale.aggregate({
       where: {
@@ -136,11 +138,26 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
         minStock: true,
         unit: true,
         iconName: true,
+        price: true,
       },
       orderBy: [
         { stock: 'asc' },
         { name: 'asc' },
       ],
+    }),
+
+    // Latest historical SaleItem.productName snapshot per product — unfiltered
+    // by productId so it runs in Wave 1 (before topGrouped results are known).
+    // Returns a superset; only entries matching top product IDs are consumed.
+    prisma.saleItem.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      distinct: ['productId'],
+      select: {
+        productId: true,
+        productName: true,
+      },
     }),
   ]);
 
@@ -163,46 +180,16 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
   // activeProducts is already resolved from Wave 1 above
   const totalProductCount = activeProducts.length;
 
-  // 2. Resolve top-product names and catalog attributes.
-  //    Both sub-queries depend on topGrouped (need topProductIds) but are independent of each other
-  //    → run them in parallel.
+  // 2. Resolve top-product names and catalog attributes from Wave 1 data.
+  //    All required data was pre-fetched in the single parallel wave above:
+  //    - Snapshot names: from allRecentSnapshots (unfiltered by productId)
+  //    - Catalog attributes: from activeProducts (which includes price)
+  //    No additional database round trip required.
   let topProducts: DashboardTopProduct[] = [];
 
   if (topGrouped.length > 0) {
-    const topProductIds = topGrouped.map((item) => item.productId);
-
-    // 2a + 2b in parallel: name snapshots and catalog attributes are independent
-    const [recentSaleItems, catalogProducts] = await Promise.all([
-      // 2a. Latest historical SaleItem.productName snapshot for each top product
-      prisma.saleItem.findMany({
-        where: {
-          productId: { in: topProductIds },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        distinct: ['productId'],
-        select: {
-          productId: true,
-          productName: true,
-        },
-      }),
-
-      // 2b. Current catalog attributes (price, iconName) from Product master
-      prisma.product.findMany({
-        where: {
-          id: { in: topProductIds },
-        },
-        select: {
-          id: true,
-          price: true,
-          iconName: true,
-        },
-      }),
-    ]);
-
-    const snapshotNameMap = new Map(recentSaleItems.map((s) => [s.productId, s.productName]));
-    const catalogMap = new Map(catalogProducts.map((p) => [p.id, p]));
+    const snapshotNameMap = new Map(allRecentSnapshots.map((s) => [s.productId, s.productName]));
+    const catalogMap = new Map(activeProducts.map((p) => [p.id, { price: p.price, iconName: p.iconName }]));
 
     topProducts = topGrouped.map((item) => {
       const snapshotName = snapshotNameMap.get(item.productId) ?? 'Produk';

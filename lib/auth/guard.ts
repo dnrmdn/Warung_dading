@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { ActionResult } from '@/app/actions/types';
@@ -12,9 +13,9 @@ export interface AuthenticatedUser {
 }
 
 /**
- * Server-authoritative resolution of authenticated user and active state.
+ * Internal resolver for session & user state.
  */
-export async function getCurrentUser(
+async function resolveCurrentUser(
   mockHeaders?: Headers
 ): Promise<AuthenticatedUser | null> {
   try {
@@ -67,6 +68,12 @@ export async function getCurrentUser(
     return null;
   }
 }
+
+/**
+ * Server-authoritative resolution of authenticated user and active state.
+ * Deduplicated per-request via React cache().
+ */
+export const getCurrentUser = cache(resolveCurrentUser);
 
 /**
  * Enforces valid session + active account state.

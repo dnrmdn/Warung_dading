@@ -11,8 +11,10 @@ import { Plus, TrendingDown } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default async function PengeluaranPage() {
-  await enforceAdminPage();
-  const expenses = await getExpenses();
+  const [, expenses] = await Promise.all([
+    enforceAdminPage(),
+    getExpenses(),
+  ]);
 
   // Sort newest-first: expenseDate desc, then createdAt desc
   const sortedExpenses = [...expenses].sort((a, b) => {

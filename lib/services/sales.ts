@@ -8,7 +8,6 @@ import {
   Product,
   HPPComponent,
   SellingMode,
-  InventoryType,
   PaymentStatus,
   ProductSaleHistoryItem,
   ReceivableSummary,
@@ -109,7 +108,6 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     variant: p.variant ?? undefined,
     family: p.family,
     category: p.category.name,
-    inventoryType: p.inventoryType as InventoryType,
     price: p.price ?? undefined,
     preparedPrice: p.preparedPrice ?? undefined,
     costPrice: p.costPrice ?? undefined,
@@ -175,12 +173,15 @@ function toDomainSale(s: PrismaSaleWithItems): Sale {
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
 
-function getTodayLocalDate(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+const JAKARTA_DATE_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jakarta',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+export function getTodayLocalDate(date = new Date()): string {
+  return JAKARTA_DATE_FORMATTER.format(date);
 }
 
 function parseDateToUtcMidnight(dateStr: string): Date {
@@ -513,7 +514,7 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
             const prismaProduct = productMap.get(item.productId)!;
             const domainProduct = toDomainProduct(prismaProduct);
 
-            const unitHpp = calculateHPP(domainProduct);
+            const unitHpp = calculateHPP(domainProduct, item.mode);
             const subtotal = item.unitPrice * item.quantity;
             const hppTotal = unitHpp * item.quantity;
 
@@ -578,6 +579,8 @@ export async function createSale(input: CreateSaleInput): Promise<Sale> {
           const materialConsumption = new Map<string, number>();
 
           for (const item of input.items) {
+            if (item.mode !== 'brewed') continue;
+
             const prismaProduct = productMap.get(item.productId)!;
 
             for (const rc of prismaProduct.recipeComponents) {

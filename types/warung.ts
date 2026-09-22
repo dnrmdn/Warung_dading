@@ -2,6 +2,11 @@ export type InventoryType = 'barang' | 'bahan' | 'produk_jadi';
 
 export type SellingMode = 'direct' | 'brewed';
 
+export interface CategoryItem {
+  id: string;
+  name: string;
+}
+
 export interface HPPComponent {
   id: string;
   name: string;
@@ -17,7 +22,7 @@ export interface Product {
   variant?: string;
   family: string;
   category: string;
-  inventoryType: InventoryType;
+  categoryId?: string;
   price?: number; // undefined if unset in locked source (e.g. Resale)
   preparedPrice?: number;
   costPrice?: number; // Optional fallback or derived cost price

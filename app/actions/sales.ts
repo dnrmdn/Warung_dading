@@ -110,6 +110,7 @@ export async function createSaleAction(
     revalidatePath('/');
     revalidatePath('/laporan');
     revalidatePath('/piutang');
+    revalidatePath('/transaksi');
     return { success: true, data };
   } catch (error) {
     return handleSaleError(error);
@@ -154,6 +155,7 @@ export async function recordReceivablePaymentAction(
     revalidatePath('/piutang');
     revalidatePath('/');
     revalidatePath('/laporan');
+    revalidatePath('/transaksi');
     return { success: true, data };
   } catch (error) {
     return handleSaleError(error);

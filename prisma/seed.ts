@@ -71,7 +71,6 @@ async function main() {
       variant: product.variant ?? null,
       family: product.family,
       categoryId,
-      inventoryType: product.inventoryType,
       price: product.price ?? null,
       preparedPrice: product.preparedPrice ?? null,
       costPrice: product.costPrice ?? null,

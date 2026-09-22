@@ -9,7 +9,8 @@ import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 import { ProductIcon } from '@/components/ui/product-icon';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { formatRupiah } from '@/lib/format';
+import { formatRupiah, formatMargin } from '@/lib/format';
+import { getDualModeHPP } from '@/lib/hpp';
 import {
   AlertTriangle,
   Info,
@@ -62,10 +63,9 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
 
   const filteredPickerProducts = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
-    const bahanOnly = availableProducts.filter((p) => p.inventoryType === 'bahan');
     const list = q.length === 0
-      ? bahanOnly
-      : bahanOnly.filter((p) =>
+      ? availableProducts
+      : availableProducts.filter((p) =>
           p.name.toLowerCase().includes(q) ||
           (p.family || '').toLowerCase().includes(q) ||
           (p.variant || '').toLowerCase().includes(q)
@@ -83,26 +83,23 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
     formUnit.trim().toLowerCase() !== selectedProductForForm.unit.trim().toLowerCase()
   );
 
-  // Real-time derived calculations from components
-  const totalCalculatedHpp = useMemo(() => {
-    if (components.length === 0) return undefined;
+  // Real-time derived calculations from components and product pricing
+  const dualHpp = useMemo(() => {
+    return getDualModeHPP({
+      costPrice: product.costPrice,
+      price: product.price,
+      preparedPrice: product.preparedPrice,
+      hppComponents: components,
+    });
+  }, [product.costPrice, product.price, product.preparedPrice, components]);
+
+  const totalCalculatedRecipeCost = useMemo(() => {
+    if (components.length === 0) return 0;
     return components.reduce(
       (sum, c) => sum + Number(c.quantity || 0) * Number(c.unitCost || 0),
       0
     );
   }, [components]);
-
-  const grossProfit = useMemo(() => {
-    if (product.price === undefined || totalCalculatedHpp === undefined) {
-      return undefined;
-    }
-    return product.price - totalCalculatedHpp;
-  }, [product.price, totalCalculatedHpp]);
-
-  const marginPercent = useMemo(() => {
-    if (grossProfit === undefined || !product.price) return undefined;
-    return Math.round((grossProfit / product.price) * 100);
-  }, [grossProfit, product.price]);
 
   // Open form for adding a new component
   const handleOpenAdd = () => {
@@ -239,45 +236,127 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
       />
 
       <div className="flex flex-col gap-3.5 p-4">
-        {/* Product & Derived Margin Overview Card */}
-        <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-surface-subtle text-primary border border-border/60 shrink-0">
-              <ProductIcon name={product.iconName} className="w-6 h-6 stroke-[1.8]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-h3 text-text truncate">{product.name}</h2>
-              <p className="text-caption text-text-secondary">
-                Kategori: {product.category} • Satuan: {product.unit}
-              </p>
+        {/* Product & Derived Margin Overview Cards */}
+        {dualHpp.brewed ? (
+          /* Dual Mode View: Direct (Mentah) vs Brewed (Diseduh) */
+          <div className="flex flex-col gap-3">
+            <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-surface-subtle text-primary border border-border/60 shrink-0">
+                  <ProductIcon name={product.iconName} className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-h3 text-text truncate">{product.name}</h2>
+                  <p className="text-caption text-text-secondary">
+                    Kategori: {product.category} • Satuan: {product.unit}
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct Mode Card */}
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-surface-subtle/80 border border-border/70">
+                <div className="flex items-center justify-between">
+                  <span className="text-caption font-semibold text-text uppercase tracking-wide">
+                    Jual Langsung (Mentah)
+                  </span>
+                  <span className="text-caption font-bold text-success">
+                    Margin {formatMargin(dualHpp.direct.marginPercent)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/40 text-center">
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Harga</span>
+                    <span className="text-small font-bold text-primary block mt-0.5">
+                      {formatRupiah(dualHpp.direct.sellingPrice)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">HPP</span>
+                    <span className="text-small font-bold text-text block mt-0.5">
+                      {formatRupiah(dualHpp.direct.unitHpp)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Laba</span>
+                    <span className="text-small font-bold text-success block mt-0.5">
+                      {formatRupiah(dualHpp.direct.grossProfit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Brewed Mode Card */}
+              <div className="flex flex-col gap-2 p-3 rounded-xl bg-primary-soft/20 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-caption font-semibold text-primary-dark uppercase tracking-wide">
+                    Diseduh (Siap Saji)
+                  </span>
+                  <span className="text-caption font-bold text-success">
+                    Margin {formatMargin(dualHpp.brewed.marginPercent)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-primary/20 text-center">
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Harga</span>
+                    <span className="text-small font-bold text-primary block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.sellingPrice)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">HPP</span>
+                    <span className="text-small font-bold text-text block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.unitHpp)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-text-secondary block">Laba</span>
+                    <span className="text-small font-bold text-success block mt-0.5">
+                      {formatRupiah(dualHpp.brewed.grossProfit)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/60 text-center">
-            <div className="p-2 rounded-xl bg-surface-subtle">
-              <span className="text-caption text-text-secondary block">Harga Jual</span>
-              <span className="text-body-medium font-bold text-primary block mt-0.5">
-                {formatRupiah(product.price)}
-              </span>
+        ) : (
+          /* Single Mode View */
+          <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-surface-subtle text-primary border border-border/60 shrink-0">
+                <ProductIcon name={product.iconName} className="w-6 h-6 stroke-[1.8]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-h3 text-text truncate">{product.name}</h2>
+                <p className="text-caption text-text-secondary">
+                  Kategori: {product.category} • Satuan: {product.unit}
+                </p>
+              </div>
             </div>
 
-            <div className="p-2 rounded-xl bg-surface-subtle">
-              <span className="text-caption text-text-secondary block">Total HPP</span>
-              <span className="text-body-medium font-bold text-text block mt-0.5">
-                {totalCalculatedHpp !== undefined
-                  ? formatRupiah(totalCalculatedHpp)
-                  : '-'}
-              </span>
-            </div>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/60 text-center">
+              <div className="p-2 rounded-xl bg-surface-subtle">
+                <span className="text-caption text-text-secondary block">Harga Jual</span>
+                <span className="text-body-medium font-bold text-primary block mt-0.5">
+                  {formatRupiah(dualHpp.direct.sellingPrice)}
+                </span>
+              </div>
 
-            <div className="p-2 rounded-xl bg-surface-subtle">
-              <span className="text-caption text-text-secondary block">Margin</span>
-              <span className="text-body-medium font-bold text-success block mt-0.5">
-                {marginPercent !== undefined ? `${marginPercent}%` : '-'}
-              </span>
+              <div className="p-2 rounded-xl bg-surface-subtle">
+                <span className="text-caption text-text-secondary block">Total HPP</span>
+                <span className="text-body-medium font-bold text-text block mt-0.5">
+                  {formatRupiah(dualHpp.direct.unitHpp)}
+                </span>
+              </div>
+
+              <div className="p-2 rounded-xl bg-surface-subtle">
+                <span className="text-caption text-text-secondary block">Margin</span>
+                <span className="text-body-medium font-bold text-success block mt-0.5">
+                  {formatMargin(dualHpp.direct.marginPercent)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Editable HPP Components List Card */}
         <div className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-3 shadow-2xs">
@@ -285,13 +364,22 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-primary" />
               <h3 className="text-body-medium font-semibold text-text">
-                Komponen Biaya / Resep
+                {dualHpp.brewed ? 'Komponen Tambahan Seduh / Masak' : 'Komponen Biaya / Resep'}
               </h3>
             </div>
             <span className="text-caption text-text-muted">
               {components.length} komponen
             </span>
           </div>
+
+          {dualHpp.brewed && product.costPrice !== undefined && product.costPrice !== null && (
+            <div className="text-caption text-text-secondary bg-surface-subtle p-2.5 rounded-xl border border-border/70 flex items-center justify-between">
+              <span>Modal Dasar Sachet:</span>
+              <span className="font-semibold text-text">
+                {formatRupiah(product.costPrice)} (dikelola di Stok/Pembelian)
+              </span>
+            </div>
+          )}
 
           {components.length > 0 ? (
             <>
@@ -359,9 +447,11 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
 
               {/* Subtotal & Total HPP Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-border font-medium text-small">
-                <span className="text-text-secondary">Total HPP per Porsi</span>
+                <span className="text-text-secondary">
+                  {dualHpp.brewed ? 'Total Biaya Tambahan Seduh' : 'Total HPP per Porsi'}
+                </span>
                 <span className="text-body-medium font-bold text-text">
-                  {formatRupiah(totalCalculatedHpp)}
+                  {formatRupiah(totalCalculatedRecipeCost)}
                 </span>
               </div>
             </>
@@ -386,26 +476,6 @@ export function HppDetailClient({ initialProduct, availableProducts }: HppDetail
             <span>Tambah Komponen Biaya</span>
           </button>
         </div>
-
-        {/* Live Estimated Gross Profit Card */}
-        {grossProfit !== undefined && marginPercent !== undefined && (
-          <div className="p-4 rounded-2xl bg-success-soft/30 border border-success/30 flex items-center justify-between shadow-2xs">
-            <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-success-soft text-success">
-                <PieChart className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-caption font-medium text-success-dark block">
-                  Estimasi Keuntungan Bersih
-                </span>
-                <span className="text-body-medium font-bold text-text block">
-                  {formatRupiah(grossProfit)} per {product.unit}
-                </span>
-              </div>
-            </div>
-            <span className="text-h3 font-bold text-success">{marginPercent}%</span>
-          </div>
-        )}
 
         {/* Explanatory HPP Note */}
         {product.hppNote && (

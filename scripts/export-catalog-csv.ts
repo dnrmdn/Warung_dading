@@ -90,7 +90,6 @@ async function exportCatalog() {
       'variant',
       'family',
       'categoryId',
-      'inventoryType',
       'price',
       'preparedPrice',
       'costPrice',

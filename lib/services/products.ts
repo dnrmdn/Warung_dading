@@ -10,7 +10,7 @@ import {
   StockAdjustmentLog,
   StockAdjustmentType,
   StockAdjustmentReason,
-  InventoryType,
+  CategoryItem,
 } from '@/types/warung';
 import { Prisma } from '@prisma/client';
 
@@ -26,7 +26,6 @@ export interface PickerProduct {
   name: string;
   variant?: string;
   family: string;
-  inventoryType: InventoryType;
   category: string;
   unit: string;
   iconName?: string;
@@ -37,19 +36,22 @@ export interface PickerProduct {
 type PrismaProductWithRelations = Prisma.ProductGetPayload<{
   include: {
     category: true;
-    recipeComponents: true;
+    recipeComponents?: true | { orderBy: { createdAt: 'asc' } };
   };
 }>;
 
 function toDomainProduct(p: PrismaProductWithRelations): Product {
-  const hppComponents: HPPComponent[] = (p.recipeComponents || []).map((rc) => ({
-    id: rc.id,
-    name: rc.name,
-    quantity: Number(rc.quantity),
-    unit: rc.unit,
-    unitCost: rc.unitCost,
-    materialProductId: rc.materialProductId ?? undefined,
-  }));
+  const hppComponents: HPPComponent[] | undefined =
+    p.recipeComponents && p.recipeComponents.length > 0
+      ? p.recipeComponents.map((rc) => ({
+          id: rc.id,
+          name: rc.name,
+          quantity: Number(rc.quantity),
+          unit: rc.unit,
+          unitCost: rc.unitCost,
+          materialProductId: rc.materialProductId ?? undefined,
+        }))
+      : undefined;
 
   return {
     id: p.id,
@@ -57,7 +59,7 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     variant: p.variant ?? undefined,
     family: p.family,
     category: p.category.name,
-    inventoryType: p.inventoryType as InventoryType,
+    categoryId: p.categoryId,
     price: p.price ?? undefined,
     preparedPrice: p.preparedPrice ?? undefined,
     costPrice: p.costPrice ?? undefined,
@@ -66,7 +68,7 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     unit: p.unit,
     iconName: p.iconName ?? undefined,
     isActive: p.isActive,
-    hppComponents: hppComponents.length > 0 ? hppComponents : undefined,
+    hppComponents,
     hppNote: p.hppNote ?? undefined,
   };
 }
@@ -108,22 +110,38 @@ export async function getCategories(): Promise<string[]> {
   return categories.map((c) => c.name);
 }
 
+/**
+ * Retrieves all categories with both id and name.
+ */
+export async function getCategoryItems(): Promise<CategoryItem[]> {
+  const categories = await prisma.category.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true },
+  });
+  return categories;
+}
+
 // ─── 2. Product Query Operations ─────────────────────────────────────────────
 
 /**
- * Retrieves all products, optionally including inactive/archived products.
- * Includes category and recipeComponents for full Product type compatibility.
+ * Retrieves products, optionally including inactive/archived products and recipeComponents.
+ * By default, `includeRecipe: false` to avoid expensive database joins for catalogue and POS views.
  */
 export async function getProducts(options?: {
   includeInactive?: boolean;
+  includeRecipe?: boolean;
 }): Promise<Product[]> {
   const products = await prisma.product.findMany({
     where: options?.includeInactive ? undefined : { isActive: true },
     include: {
       category: true,
-      recipeComponents: {
-        orderBy: { createdAt: 'asc' },
-      },
+      ...(options?.includeRecipe
+        ? {
+            recipeComponents: {
+              orderBy: { createdAt: 'asc' },
+            },
+          }
+        : {}),
     },
     orderBy: [{ family: 'asc' }, { name: 'asc' }],
   });
@@ -134,7 +152,7 @@ export async function getProducts(options?: {
 /**
  * Retrieves a lightweight product list for picker/search UIs.
  * Returns only the fields needed to render a picker dropdown (name, family,
- * variant, category, unit, iconName, inventoryType). Does NOT include
+ * variant, category, unit, iconName). Does NOT include
  * recipeComponents, price, stock, or HPP data — use getProductById for those.
  *
  * Used by: /hpp/[id] material picker (HppDetailClient).
@@ -147,7 +165,6 @@ export async function getProductsForPicker(): Promise<PickerProduct[]> {
       name: true,
       family: true,
       variant: true,
-      inventoryType: true,
       unit: true,
       iconName: true,
       category: {
@@ -162,7 +179,6 @@ export async function getProductsForPicker(): Promise<PickerProduct[]> {
     name: p.name,
     family: p.family,
     variant: p.variant ?? undefined,
-    inventoryType: p.inventoryType as InventoryType,
     unit: p.unit,
     iconName: p.iconName ?? undefined,
     category: p.category.name,
@@ -276,7 +292,6 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
       variant: input.variant?.trim() || null,
       family: input.family.trim(),
       categoryId: category.id,
-      inventoryType: input.inventoryType,
       price: input.price ?? null,
       preparedPrice: input.preparedPrice ?? null,
       costPrice: input.costPrice ?? null,
@@ -370,7 +385,6 @@ export async function updateProduct(
         variant: input.variant !== undefined ? (input.variant?.trim() || null) : undefined,
         family: input.family !== undefined ? input.family.trim() : undefined,
         categoryId: input.category !== undefined ? categoryId : undefined,
-        inventoryType: input.inventoryType !== undefined ? input.inventoryType : undefined,
         price: input.price !== undefined ? (input.price ?? null) : undefined,
         preparedPrice: input.preparedPrice !== undefined ? (input.preparedPrice ?? null) : undefined,
         costPrice: input.costPrice !== undefined ? (input.costPrice ?? null) : undefined,

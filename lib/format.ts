@@ -30,3 +30,14 @@ export function formatPriceOnly(amount?: number): string {
   }
   return `${amount}`;
 }
+
+/**
+ * Formats a margin percentage to 1 decimal place.
+ * Examples: 10 -> "10.0%", 38.066... -> "38.1%", undefined/null/NaN -> "-"
+ */
+export function formatMargin(percent?: number | null): string {
+  if (percent === undefined || percent === null || Number.isNaN(percent)) {
+    return '-';
+  }
+  return `${percent.toFixed(1)}%`;
+}

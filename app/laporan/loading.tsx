@@ -2,54 +2,60 @@ import React from 'react';
 import { AppShell } from '@/components/layout/app-shell';
 import { HeaderBar } from '@/components/navigation/header-bar';
 
-export default function LaporanLoading() {
+export default function LoadingLaporan() {
   return (
     <AppShell>
       <HeaderBar
         title="Laporan Bisnis"
-        subtitle="Memuat analitik data..."
+        subtitle="Memuat analitik..."
       />
 
       <div className="flex flex-col gap-4 p-4 pb-20 animate-pulse">
-        {/* Filter Pills Skeleton */}
-        <div className="flex items-center gap-2 overflow-hidden py-1">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="w-20 h-8 rounded-full bg-surface border border-border" />
-          ))}
+        {/* Period Selector Skeleton */}
+        <div className="flex items-center gap-2 p-1.5 bg-surface-subtle rounded-2xl overflow-x-hidden">
+          <div className="h-8 flex-1 bg-surface rounded-xl" />
+          <div className="h-8 flex-1 bg-surface-subtle/50 rounded-xl" />
+          <div className="h-8 flex-1 bg-surface-subtle/50 rounded-xl" />
+          <div className="h-8 flex-1 bg-surface-subtle/50 rounded-xl" />
         </div>
 
-        {/* Date Banner Skeleton */}
-        <div className="w-full h-8 rounded-xl bg-surface-subtle border border-border" />
-
-        {/* 6 KPI Cards Skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-28 rounded-2xl bg-surface border border-border p-4 flex flex-col justify-between"
+              className="p-4 rounded-2xl bg-surface border border-border flex flex-col gap-2 shadow-2xs"
             >
-              <div className="flex justify-between items-center">
-                <div className="w-20 h-3.5 rounded bg-surface-subtle" />
-                <div className="w-7 h-7 rounded-lg bg-surface-subtle" />
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-20 bg-surface-subtle rounded" />
+                <div className="w-6 h-6 rounded-lg bg-surface-subtle" />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="w-28 h-6 rounded bg-surface-subtle" />
-                <div className="w-16 h-3 rounded bg-surface-subtle" />
-              </div>
+              <div className="h-6 w-28 bg-surface-subtle rounded" />
+              <div className="h-3 w-16 bg-surface-subtle rounded" />
             </div>
           ))}
         </div>
 
-        {/* Trend Chart Skeleton */}
-        <div className="h-64 rounded-2xl bg-surface border border-border p-5 flex flex-col justify-between">
-          <div className="w-36 h-5 rounded bg-surface-subtle" />
-          <div className="w-full h-40 rounded-xl bg-surface-subtle" />
+        {/* Trend Chart Card Skeleton */}
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-2xs flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="h-4 w-32 bg-surface-subtle rounded" />
+            <div className="h-3 w-20 bg-surface-subtle rounded" />
+          </div>
+          <div className="h-44 w-full bg-surface-subtle/60 rounded-xl" />
         </div>
 
-        {/* 2 Column Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="h-72 rounded-2xl bg-surface border border-border p-5" />
-          <div className="h-72 rounded-2xl bg-surface border border-border p-5" />
+        {/* Breakdown Card Skeleton */}
+        <div className="p-4 rounded-2xl bg-surface border border-border shadow-2xs flex flex-col gap-3">
+          <div className="h-4 w-36 bg-surface-subtle rounded" />
+          <div className="flex flex-col gap-2 pt-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border/40">
+                <div className="h-3 w-24 bg-surface-subtle rounded" />
+                <div className="h-3 w-20 bg-surface-subtle rounded" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </AppShell>

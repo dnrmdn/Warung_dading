@@ -10,7 +10,6 @@ interface CsvProductRow {
   variant: string | null;
   family: string;
   categoryName: string;
-  inventoryType: string;
   price: number | null;
   preparedPrice: number | null;
   costPrice: number | null;
@@ -143,7 +142,6 @@ async function main() {
     const variant = parseNullableString(getCol(row, 'variant'));
     const family = getCol(row, 'family').trim();
     const categoryName = getCol(row, 'categoryName').trim();
-    const inventoryType = getCol(row, 'inventoryType').trim();
     const price = parseNullableInt(getCol(row, 'price'));
     const preparedPrice = parseNullableInt(getCol(row, 'preparedPrice'));
     const costPrice = parseNullableInt(getCol(row, 'costPrice'));
@@ -157,7 +155,7 @@ async function main() {
     const createdAtRaw = getCol(row, 'createdAt').trim();
     const updatedAtRaw = getCol(row, 'updatedAt').trim();
 
-    if (!id || !name || !family || !categoryName || !inventoryType || !unit) {
+    if (!id || !name || !family || !categoryName || !unit) {
       throw new Error(`Row ${i + 1} has missing required fields: ${JSON.stringify(row)}`);
     }
 
@@ -173,7 +171,6 @@ async function main() {
       variant,
       family,
       categoryName,
-      inventoryType,
       price,
       preparedPrice,
       costPrice,
@@ -265,7 +262,6 @@ async function main() {
           variant: p.variant,
           family: p.family,
           categoryId,
-          inventoryType: p.inventoryType,
           price: p.price,
           preparedPrice: p.preparedPrice,
           costPrice: p.costPrice,
