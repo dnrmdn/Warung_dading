@@ -22,6 +22,7 @@ import {
   CreditCard,
   ScrollText,
   Wallet,
+  ClipboardList,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -117,6 +118,12 @@ export function MoreClient({ initialUser }: MoreClientProps) {
           label: 'Transaksi',
           description: 'Riwayat transaksi penjualan hari ini',
           href: '/transaksi',
+        },
+        {
+          icon: ClipboardList,
+          label: 'Riwayat Penyesuaian Stok',
+          description: 'Log koreksi opname & penyesuaian manual',
+          href: '/penyesuaian-stok',
         },
       ];
 

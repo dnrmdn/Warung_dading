@@ -8,6 +8,8 @@ import {
   UpdateProductInput,
   AdjustStockInput,
   StockAdjustmentLog,
+  StockAdjustmentHistoryItem,
+  StockAdjustmentHistoryOptions,
   StockAdjustmentType,
   StockAdjustmentReason,
   CategoryItem,
@@ -604,4 +606,54 @@ export async function adjustStock(input: AdjustStockInput): Promise<StockAdjustm
 
     return toDomainStockLog(log);
   });
+}
+
+/**
+ * Retrieves historical manual stock adjustments.
+ * Excludes automatic system-generated records ('pembelian' and 'penjualan').
+ */
+export async function getStockAdjustmentHistory(
+  options: StockAdjustmentHistoryOptions = {}
+): Promise<StockAdjustmentHistoryItem[]> {
+  const { limit = 50, productId, reason } = options;
+
+  const where: Prisma.StockAdjustmentLogWhereInput = {
+    // Exclude automatic system adjustments
+    reason: reason ? reason : { notIn: ['pembelian', 'penjualan'] },
+    ...(productId ? { productId } : {}),
+  };
+
+  const logs = await prisma.stockAdjustmentLog.findMany({
+    where,
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          unit: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: limit,
+  });
+
+  return logs.map((log) => ({
+    id: log.id,
+    productId: log.productId,
+    type: log.type as StockAdjustmentType,
+    amount: log.amount,
+    previousStock: log.previousStock,
+    newStock: log.newStock,
+    reason: log.reason as StockAdjustmentReason,
+    note: log.note ?? undefined,
+    createdAt: log.createdAt.toISOString(),
+    product: {
+      id: log.product.id,
+      name: log.product.name,
+      unit: log.product.unit,
+    },
+  }));
 }

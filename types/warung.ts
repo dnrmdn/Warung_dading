@@ -71,6 +71,20 @@ export interface StockAdjustmentLog {
   createdAt: string;
 }
 
+export interface StockAdjustmentHistoryItem extends StockAdjustmentLog {
+  product: {
+    id: string;
+    name: string;
+    unit: string;
+  };
+}
+
+export interface StockAdjustmentHistoryOptions {
+  limit?: number;
+  productId?: string;
+  reason?: StockAdjustmentReason;
+}
+
 export type CreateProductInput = Omit<Product, 'id'>;
 
 export type UpdateProductInput = Partial<Omit<Product, 'id'>>;
