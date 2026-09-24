@@ -2,7 +2,7 @@ export function formatRupiah(amount?: number): string {
   if (amount === undefined || amount === null) {
     return '-';
   }
-  return `Rp ${amount.toLocaleString('id-ID')}`;
+  return `Rp${amount.toLocaleString('id-ID')}`;
 }
 
 export function formatCompactRupiah(amount?: number): string {

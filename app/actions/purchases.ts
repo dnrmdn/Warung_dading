@@ -84,6 +84,7 @@ export async function createPurchaseAction(
     revalidatePath('/pembelian');
     revalidatePath('/supplier');
     revalidatePath('/');
+    revalidatePath('/dashboard');
     revalidatePath('/laporan');
     return { success: true, data };
   } catch (error) {

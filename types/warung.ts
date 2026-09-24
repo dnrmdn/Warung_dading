@@ -30,6 +30,7 @@ export interface Product {
   minStock: number;
   unit: string;
   iconName?: string;
+  imageUrl?: string;
   isActive: boolean;
   hppComponents?: HPPComponent[];
   hppNote?: string;

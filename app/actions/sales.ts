@@ -108,6 +108,7 @@ export async function createSaleAction(
   try {
     const data = await createSale(input);
     revalidatePath('/');
+    revalidatePath('/dashboard');
     revalidatePath('/laporan');
     revalidatePath('/piutang');
     revalidatePath('/transaksi');
@@ -154,6 +155,7 @@ export async function recordReceivablePaymentAction(
     const data = await recordReceivablePayment(input);
     revalidatePath('/piutang');
     revalidatePath('/');
+    revalidatePath('/dashboard');
     revalidatePath('/laporan');
     revalidatePath('/transaksi');
     return { success: true, data };

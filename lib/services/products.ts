@@ -69,6 +69,7 @@ function toDomainProduct(p: PrismaProductWithRelations): Product {
     minStock: p.minStock,
     unit: p.unit,
     iconName: p.iconName ?? undefined,
+    imageUrl: p.imageUrl ?? undefined,
     isActive: p.isActive,
     hppComponents,
     hppNote: p.hppNote ?? undefined,

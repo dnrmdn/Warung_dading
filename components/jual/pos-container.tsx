@@ -178,7 +178,7 @@ export function PosContainer({
       if (result.success) {
         handleClearCart();
         setIsPaymentSheetOpen(false);
-        router.replace('/');
+        router.replace('/dashboard');
       } else {
         alert(result.error?.message ?? 'Gagal membuat transaksi. Silakan coba lagi.');
       }
@@ -195,7 +195,7 @@ export function PosContainer({
       <HeaderBar
         title="Jual (POS)"
         subtitle={`${filteredProducts.length} produk`}
-        backHref="/"
+        backHref="/dashboard"
         rightAction={
           <button
             type="button"
@@ -236,7 +236,7 @@ export function PosContainer({
           </div>
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/dashboard')}
             className="text-[11px] font-bold underline shrink-0 hover:text-amber-900 dark:hover:text-amber-200"
           >
             Isi di Dashboard

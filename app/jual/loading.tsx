@@ -8,7 +8,7 @@ export default function LoadingJual() {
       <HeaderBar
         title="Jual (POS)"
         subtitle="Memuat produk..."
-        backHref="/"
+        backHref="/dashboard"
       />
 
       {/* Category Filter Chips Skeleton */}

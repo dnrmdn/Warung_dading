@@ -8,7 +8,7 @@ export default function LoadingTransaksi() {
       <HeaderBar
         title="Transaksi"
         subtitle="Memuat transaksi..."
-        backHref="/"
+        backHref="/dashboard"
       />
 
       <div className="flex flex-col gap-4 p-4 pb-24 animate-pulse">

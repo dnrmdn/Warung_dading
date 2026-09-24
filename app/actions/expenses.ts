@@ -72,6 +72,7 @@ export async function createExpenseAction(
     const data = await createExpense(input);
     revalidatePath('/pengeluaran');
     revalidatePath('/');
+    revalidatePath('/dashboard');
     revalidatePath('/laporan');
     return { success: true, data };
   } catch (error) {

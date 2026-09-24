@@ -40,6 +40,7 @@ model Product {
   minStock      Int                           // TS: minStock: number
   unit          String                        // TS: unit: string
   iconName      String?                       // TS: iconName?: string
+  imageUrl      String?                       // TS: imageUrl?: string — Supabase Storage public URL
   isActive      Boolean  @default(true)       // TS: isActive: boolean
   hppNote       String?                       // TS: hppNote?: string
   createdAt     DateTime @default(now())

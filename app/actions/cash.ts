@@ -74,6 +74,7 @@ export async function setOpeningCashAction(
     const userId = authCheck.user.id;
     const data = await setOpeningCash(input, userId);
     revalidatePath('/');
+    revalidatePath('/dashboard');
     revalidatePath('/jual');
     revalidatePath('/laporan');
     revalidatePath('/more');

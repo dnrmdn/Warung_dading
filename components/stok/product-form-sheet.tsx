@@ -1,11 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Product } from '@/types/warung';
 import { createProductAction, updateProductAction } from '@/app/actions/products';
+import { uploadProductImageAction, removeProductImageAction } from '@/app/actions/product-image';
 import { ProductIcon } from '@/components/ui/product-icon';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ImagePlus, Trash2, Loader2 } from 'lucide-react';
+import {
+  validateImageFile,
+  compressImage,
+  createPreviewUrl,
+  IMAGE_ACCEPT_STRING,
+} from '@/lib/image-compression';
 
 interface ProductFormSheetProps {
   isOpen: boolean;
@@ -52,6 +60,14 @@ export function ProductFormSheet({
   const [iconName, setIconName] = useState('Package');
   const [isActive, setIsActive] = useState(true);
 
+  // Image states
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [compressedFile, setCompressedFile] = useState<Blob | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [imageRemoved, setImageRemoved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +77,15 @@ export function ProductFormSheet({
     if (isOpen) {
       setErrors({});
       setIsSubmitting(false);
+      setIsUploadingImage(false);
+      setCompressedFile(null);
+      setImageRemoved(false);
+      // Clean up any existing object URL
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      setImagePreviewUrl(null);
+
       if (mode === 'edit' && product) {
         setName(product.name || '');
         setVariant(product.variant || '');
@@ -79,6 +104,7 @@ export function ProductFormSheet({
         setUnit(product.unit || 'pcs');
         setIconName(product.iconName || 'Package');
         setIsActive(product.isActive ?? true);
+        setExistingImageUrl(product.imageUrl || null);
       } else {
         // Defaults for create
         setName('');
@@ -93,9 +119,131 @@ export function ProductFormSheet({
         setUnit('pcs');
         setIconName('Package');
         setIsActive(true);
+        setExistingImageUrl(null);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, product]);
+
+  // Cleanup object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ─── Image Handlers ─────────────────────────────────────────────────
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so re-selecting the same file triggers onChange
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // Validate
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setErrors((prev) => ({ ...prev, image: validationError }));
+      return;
+    }
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.image;
+      return next;
+    });
+
+    try {
+      // Compress image client-side
+      const compressed = await compressImage(file);
+      setCompressedFile(compressed);
+
+      // Create preview URL
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      const preview = createPreviewUrl(compressed);
+      setImagePreviewUrl(preview);
+      setImageRemoved(false);
+
+      // In edit mode with existing product, upload immediately
+      if (mode === 'edit' && product) {
+        setIsUploadingImage(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', compressed, 'product-image.webp');
+          const result = await uploadProductImageAction(product.id, formData);
+          if (result.success) {
+            setExistingImageUrl(result.data.imageUrl);
+          } else {
+            // Upload failed: show error and revert local blob preview
+            setErrors((prev) => ({ ...prev, image: result.error.message }));
+            if (preview.startsWith('blob:')) {
+              URL.revokeObjectURL(preview);
+            }
+            setImagePreviewUrl(null);
+            setCompressedFile(null);
+          }
+        } catch {
+          // Upload exception: show error and revert local blob preview
+          setErrors((prev) => ({ ...prev, image: 'Gagal mengunggah gambar.' }));
+          if (preview.startsWith('blob:')) {
+            URL.revokeObjectURL(preview);
+          }
+          setImagePreviewUrl(null);
+          setCompressedFile(null);
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+    } catch {
+      setErrors((prev) => ({ ...prev, image: 'Gagal memproses gambar.' }));
+    }
+  };
+
+  const handleImageRemove = async () => {
+    // In edit mode with existing persisted image, remove from storage via server action
+    if (mode === 'edit' && product && existingImageUrl) {
+      setIsUploadingImage(true);
+      try {
+        const result = await removeProductImageAction(product.id);
+        if (result.success) {
+          if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(imagePreviewUrl);
+          }
+          setImagePreviewUrl(null);
+          setCompressedFile(null);
+          setExistingImageUrl(null);
+          setImageRemoved(true);
+        } else {
+          setErrors((prev) => ({ ...prev, image: result.error.message }));
+          // Do NOT call setImageRemoved(true); keep existing image visible
+        }
+      } catch {
+        setErrors((prev) => ({ ...prev, image: 'Gagal menghapus gambar.' }));
+        // Do NOT call setImageRemoved(true); keep existing image visible
+      } finally {
+        setIsUploadingImage(false);
+      }
+    } else {
+      // In create mode or when there is only a local un-uploaded preview
+      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+      setImagePreviewUrl(null);
+      setCompressedFile(null);
+      setImageRemoved(true);
+    }
+  };
+
+  // Determine what image to display
+  const displayImageUrl = imagePreviewUrl || (!imageRemoved ? existingImageUrl : null);
+
+  // ─── Form Submit ────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +325,17 @@ export function ProductFormSheet({
         });
 
         if (result.success) {
+          // If there's a compressed image queued, upload it now
+          if (compressedFile && result.data.id) {
+            try {
+              const formData = new FormData();
+              formData.append('file', compressedFile, 'product-image.webp');
+              await uploadProductImageAction(result.data.id, formData);
+            } catch {
+              // Product created but image failed — acceptable, admin can retry
+              console.error('Product created but image upload failed.');
+            }
+          }
           onSuccess();
           onClose();
         } else {
@@ -291,14 +450,14 @@ export function ProductFormSheet({
             </label>
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
               {AVAILABLE_ICONS.map((icon) => {
-                const isSelected = iconName === icon;
+                const isSelectedIcon = iconName === icon;
                 return (
                   <button
                     key={icon}
                     type="button"
                     onClick={() => setIconName(icon)}
                     className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all shrink-0 ${
-                      isSelected
+                      isSelectedIcon
                         ? 'bg-primary-soft text-primary border-primary font-semibold shadow-xs'
                         : 'bg-surface-subtle text-text-secondary border-border/80 hover:text-text'
                     }`}
@@ -309,6 +468,82 @@ export function ProductFormSheet({
                 );
               })}
             </div>
+          </div>
+
+          {/* Gambar Produk */}
+          <div>
+            <label className="text-caption font-medium text-text block mb-1.5">
+              Gambar Produk
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={IMAGE_ACCEPT_STRING}
+              onChange={handleImageSelect}
+              className="hidden"
+              id="product-image-input"
+            />
+
+            {displayImageUrl ? (
+              <div className="flex items-center gap-3 p-2 rounded-xl bg-surface-subtle border border-border/60">
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border/50 shrink-0">
+                  <Image
+                    src={displayImageUrl}
+                    alt="Preview"
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                  {isUploadingImage && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <span className="text-[11px] text-text-secondary truncate">
+                    {isUploadingImage ? 'Mengunggah...' : 'Gambar dipilih'}
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      className="text-[10px] font-medium text-primary bg-surface px-2 py-0.5 rounded-md border border-border hover:border-primary/50 transition-all disabled:opacity-50"
+                    >
+                      Ganti
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleImageRemove}
+                      disabled={isUploadingImage}
+                      className="text-[10px] font-medium text-danger bg-surface px-2 py-0.5 rounded-md border border-border hover:border-danger/50 transition-all disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3 h-3 inline -mt-0.5 mr-0.5" />
+                      Hapus
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-border/70 hover:border-primary/50 bg-surface-subtle hover:bg-primary-soft/5 text-text-secondary hover:text-primary transition-all disabled:opacity-50"
+              >
+                <ImagePlus className="w-5 h-5" />
+                <span className="text-small font-medium">Pilih Gambar</span>
+              </button>
+            )}
+
+            {errors.image && (
+              <p className="text-[11px] text-danger mt-1">{errors.image}</p>
+            )}
+            <p className="text-[10px] text-text-muted mt-0.5">
+              JPG, PNG, atau WebP. Maks 512 KB.
+            </p>
           </div>
         </div>
 
@@ -553,7 +788,7 @@ export function ProductFormSheet({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingImage}
             className="flex-1 py-2.5 px-4 rounded-xl bg-primary text-white font-semibold text-small hover:bg-primary-dark active:scale-98 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting

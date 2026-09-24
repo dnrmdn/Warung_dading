@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Warung Smart',
     short_name: 'Warung Smart',
     description: 'Aplikasi Manajemen Operasional Warung',
-    start_url: '/',
+    start_url: '/dashboard',
     display: 'standalone',
     background_color: '#F7F5F2',
     theme_color: '#D97757',

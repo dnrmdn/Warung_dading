@@ -47,7 +47,7 @@ export default function LoginPage() {
       const destination =
         sessionResult.success && sessionResult.data?.role === 'OWNER'
           ? '/laporan'
-          : '/';
+          : '/dashboard';
 
       router.push(destination);
       router.refresh();

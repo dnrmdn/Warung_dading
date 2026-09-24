@@ -11,9 +11,12 @@ export function middleware(request: NextRequest) {
   }
 
   // Skip static assets, api routes, and public files
+  // Also public root '/' and '/stok-publik' are public customer stock views
   if (
+    pathname === '/' ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
+    pathname.startsWith('/stok-publik') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/manifest.webmanifest') ||
     pathname.startsWith('/icon-192.png') ||
@@ -29,10 +32,10 @@ export function middleware(request: NextRequest) {
     request.cookies.get('better-auth.session_token') ||
     request.cookies.get('__Secure-better-auth.session_token');
 
-  // If visiting /login while having session cookie, hint redirect to /
+  // If visiting /login while having session cookie, hint redirect to /dashboard
   if (pathname === '/login') {
     if (sessionCookie?.value) {
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     return NextResponse.next();
   }

@@ -33,9 +33,9 @@ export function BottomNav() {
     : [
         {
           label: 'Home',
-          href: '/',
+          href: '/dashboard',
           icon: Home,
-          isActive: pathname === '/',
+          isActive: pathname === '/dashboard',
         },
         {
           label: 'Stok',

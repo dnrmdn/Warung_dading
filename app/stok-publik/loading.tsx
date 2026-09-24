@@ -1,10 +1,10 @@
 import React from 'react';
-import { PublicHeader } from '@/components/stok-publik/public-header';
+import { HeaderBar } from '@/components/navigation/header-bar';
 
 export default function LoadingPublicStock() {
   return (
     <div className="min-h-screen bg-background text-text flex flex-col max-w-lg mx-auto border-x border-border/40">
-      <PublicHeader
+      <HeaderBar
         title="Warung Dading"
         subtitle="Memuat stok barang..."
       />
@@ -23,18 +23,21 @@ export default function LoadingPublicStock() {
           <div className="h-7 w-16 bg-surface rounded-full"></div>
         </div>
 
-        {/* Product Grid Skeleton matching 6-cols */}
-        <div className="grid w-full min-w-0 max-w-full grid-cols-6 gap-1.5 sm:gap-2 p-2 box-border overflow-hidden">
-          {Array.from({ length: 24 }).map((_, i) => (
+        {/* Product Items Skeleton */}
+        <div className="p-3 flex flex-col gap-2">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="flex flex-col items-center justify-between p-1 rounded-lg bg-surface border border-border/70 min-h-[68px] sm:min-h-[76px]"
+              className="flex items-center justify-between p-3.5 bg-surface border border-border/70 rounded-2xl"
             >
-              <div className="w-5 h-5 rounded bg-surface-subtle mt-1"></div>
-              <div className="w-full flex flex-col items-center gap-1 my-0.5">
-                <div className="h-2.5 w-8 bg-surface-subtle rounded"></div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-surface-subtle shrink-0"></div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-4 w-32 bg-surface-subtle rounded"></div>
+                  <div className="h-3 w-20 bg-surface-subtle rounded"></div>
+                </div>
               </div>
-              <div className="h-2 w-6 bg-surface-subtle rounded mb-0.5"></div>
+              <div className="h-6 w-16 bg-surface-subtle rounded-lg"></div>
             </div>
           ))}
         </div>

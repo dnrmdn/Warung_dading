@@ -123,6 +123,7 @@ export async function createProductAction(
   try {
     const data = await createProduct(input);
     revalidatePath('/');
+    revalidatePath('/dashboard');
     return { success: true, data };
   } catch (error) {
     return handleProductError(error);
@@ -139,6 +140,7 @@ export async function updateProductAction(
   try {
     const data = await updateProduct(id, input);
     revalidatePath('/');
+    revalidatePath('/dashboard');
     return { success: true, data };
   } catch (error) {
     return handleProductError(error);
@@ -164,6 +166,7 @@ export async function deleteProductAction(
       };
     }
     revalidatePath('/');
+    revalidatePath('/dashboard');
     return { success: true, data: product };
   } catch (error) {
     return handleProductError(error);
@@ -203,6 +206,7 @@ export async function adjustStockAction(
       };
     }
     revalidatePath('/');
+    revalidatePath('/dashboard');
     return {
       success: true,
       data: {

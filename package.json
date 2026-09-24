@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@supabase/supabase-js": "^2.117.1",
     "better-auth": "^1.7.5",
     "clsx": "^2.1.1",
     "lucide-react": "^1.45.0",

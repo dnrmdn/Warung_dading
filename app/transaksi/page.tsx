@@ -22,7 +22,7 @@ export default async function TransaksiPage() {
       <HeaderBar
         title="Transaksi"
         subtitle="Riwayat transaksi penjualan"
-        backHref="/"
+        backHref="/dashboard"
       />
       <TransaksiClient initialSales={sales} todayDate={today} />
     </AppShell>
