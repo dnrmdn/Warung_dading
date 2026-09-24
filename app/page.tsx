@@ -24,7 +24,7 @@ export default async function PublicStockRootPage() {
   const categories = Array.from(categorySet).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="min-h-screen bg-background text-text flex flex-col max-w-lg mx-auto border-x border-border/40">
+    <div className="flex flex-col min-h-dvh w-full min-w-0 max-w-lg mx-auto overflow-x-hidden bg-background text-text border-x border-border/40 relative">
       <PublicHeader
         title="Warung Dading"
         subtitle="Ketersediaan Stok Barang"

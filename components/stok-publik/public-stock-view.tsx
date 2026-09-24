@@ -189,7 +189,7 @@ export function PublicStockView({ products, categories }: PublicStockViewProps) 
             </p>
           </div>
         ) : (
-          <div className="grid w-full min-w-0 max-w-full grid-cols-6 gap-1.5 sm:gap-2 p-2 box-border overflow-hidden">
+          <div className="grid w-full min-w-0 max-w-full grid-cols-6 gap-1 p-1.5 box-border overflow-hidden">
             {filteredProducts.map((product) => (
               <PublicStockItem
                 key={product.id}
