@@ -14,7 +14,11 @@ interface AppShellProps {
 
 export function AppShell({ children, className, showNav = true }: AppShellProps) {
   const pathname = usePathname();
-  const isMainTab = pathname === '/' || pathname === '/stok' || pathname === '/more' || pathname === '/laporan';
+  const isMainTab =
+    pathname === '/dashboard' ||
+    pathname === '/stok' ||
+    pathname === '/more' ||
+    pathname === '/laporan';
 
   return (
     <div className="flex flex-col min-h-dvh w-full max-w-lg mx-auto bg-background text-text relative shadow-sm border-x border-border/30">
