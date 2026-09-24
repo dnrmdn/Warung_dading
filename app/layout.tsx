@@ -18,8 +18,20 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Warung App",
+  title: "Warung Smart",
+  applicationName: "Warung Smart",
   description: "Mobile-first business management application for Indonesian warung",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({

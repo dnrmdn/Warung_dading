@@ -14,7 +14,12 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
-    pathname.startsWith('/favicon.ico')
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/manifest.webmanifest') ||
+    pathname.startsWith('/icon-192.png') ||
+    pathname.startsWith('/icon-512.png') ||
+    pathname.startsWith('/apple-icon.png') ||
+    pathname.startsWith('/icon.png')
   ) {
     return NextResponse.next();
   }
