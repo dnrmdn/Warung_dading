@@ -10,10 +10,10 @@ import { ProductIcon } from '@/components/ui/product-icon';
 import { AlertCircle, ImagePlus, Trash2, Loader2 } from 'lucide-react';
 import {
   validateImageFile,
-  compressImage,
   createPreviewUrl,
   IMAGE_ACCEPT_STRING,
 } from '@/lib/image-compression';
+import { ImageEditorModal } from '@/components/stok/image-editor-modal';
 
 interface ProductFormSheetProps {
   isOpen: boolean;
@@ -61,6 +61,8 @@ export function ProductFormSheet({
   const [isActive, setIsActive] = useState(true);
 
   // Image states
+  const [rawFileForEditor, setRawFileForEditor] = useState<File | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [compressedFile, setCompressedFile] = useState<Blob | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -80,6 +82,8 @@ export function ProductFormSheet({
       setIsUploadingImage(false);
       setCompressedFile(null);
       setImageRemoved(false);
+      setRawFileForEditor(null);
+      setIsEditorOpen(false);
       // Clean up any existing object URL
       if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreviewUrl);
@@ -137,14 +141,14 @@ export function ProductFormSheet({
 
   // ─── Image Handlers ─────────────────────────────────────────────────
 
-  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Reset input so re-selecting the same file triggers onChange
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    // Validate
+    // Validate format & size
     const validationError = validateImageFile(file);
     if (validationError) {
       setErrors((prev) => ({ ...prev, image: validationError }));
@@ -157,87 +161,43 @@ export function ProductFormSheet({
       return next;
     });
 
-    try {
-      // Compress image client-side
-      const compressed = await compressImage(file);
-      setCompressedFile(compressed);
-
-      // Create preview URL
-      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-      const preview = createPreviewUrl(compressed);
-      setImagePreviewUrl(preview);
-      setImageRemoved(false);
-
-      // In edit mode with existing product, upload immediately
-      if (mode === 'edit' && product) {
-        setIsUploadingImage(true);
-        try {
-          const formData = new FormData();
-          formData.append('file', compressed, 'product-image.webp');
-          const result = await uploadProductImageAction(product.id, formData);
-          if (result.success) {
-            setExistingImageUrl(result.data.imageUrl);
-          } else {
-            // Upload failed: show error and revert local blob preview
-            setErrors((prev) => ({ ...prev, image: result.error.message }));
-            if (preview.startsWith('blob:')) {
-              URL.revokeObjectURL(preview);
-            }
-            setImagePreviewUrl(null);
-            setCompressedFile(null);
-          }
-        } catch {
-          // Upload exception: show error and revert local blob preview
-          setErrors((prev) => ({ ...prev, image: 'Gagal mengunggah gambar.' }));
-          if (preview.startsWith('blob:')) {
-            URL.revokeObjectURL(preview);
-          }
-          setImagePreviewUrl(null);
-          setCompressedFile(null);
-        } finally {
-          setIsUploadingImage(false);
-        }
-      }
-    } catch {
-      setErrors((prev) => ({ ...prev, image: 'Gagal memproses gambar.' }));
-    }
+    // Open image editor with raw file — NO Supabase call!
+    setRawFileForEditor(file);
+    setIsEditorOpen(true);
   };
 
-  const handleImageRemove = async () => {
-    // In edit mode with existing persisted image, remove from storage via server action
-    if (mode === 'edit' && product && existingImageUrl) {
-      setIsUploadingImage(true);
-      try {
-        const result = await removeProductImageAction(product.id);
-        if (result.success) {
-          if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(imagePreviewUrl);
-          }
-          setImagePreviewUrl(null);
-          setCompressedFile(null);
-          setExistingImageUrl(null);
-          setImageRemoved(true);
-        } else {
-          setErrors((prev) => ({ ...prev, image: result.error.message }));
-          // Do NOT call setImageRemoved(true); keep existing image visible
-        }
-      } catch {
-        setErrors((prev) => ({ ...prev, image: 'Gagal menghapus gambar.' }));
-        // Do NOT call setImageRemoved(true); keep existing image visible
-      } finally {
-        setIsUploadingImage(false);
-      }
-    } else {
-      // In create mode or when there is only a local un-uploaded preview
-      if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-      setImagePreviewUrl(null);
-      setCompressedFile(null);
-      setImageRemoved(true);
+  const handleEditorApply = (croppedBlob: Blob) => {
+    // Stage cropped Blob locally
+    setCompressedFile(croppedBlob);
+
+    // Clean up previous blob preview if any
+    if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
     }
+
+    const preview = createPreviewUrl(croppedBlob);
+    setImagePreviewUrl(preview);
+    setImageRemoved(false);
+
+    // Close editor without contacting Supabase
+    setIsEditorOpen(false);
+    setRawFileForEditor(null);
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+    setRawFileForEditor(null);
+  };
+
+  const handleImageRemove = () => {
+    // Discard any staged local image preview
+    if (imagePreviewUrl && imagePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreviewUrl);
+    }
+    setImagePreviewUrl(null);
+    setCompressedFile(null);
+    // Queue removal locally — do NOT call Supabase immediately!
+    setImageRemoved(true);
   };
 
   // Determine what image to display
@@ -361,6 +321,27 @@ export function ProductFormSheet({
         });
 
         if (result.success) {
+          // In edit mode: upload newly staged image if user applied a new image
+          if (compressedFile) {
+            try {
+              const formData = new FormData();
+              formData.append('file', compressedFile, 'product-image.webp');
+              const imgResult = await uploadProductImageAction(product.id, formData);
+              if (!imgResult.success) {
+                console.error('Image upload failed during product update:', imgResult.error.message);
+              }
+            } catch (imgErr) {
+              console.error('Image upload failed during product update:', imgErr);
+            }
+          } else if (imageRemoved && existingImageUrl) {
+            // Or remove existing image if user explicitly clicked remove
+            try {
+              await removeProductImageAction(product.id);
+            } catch (delErr) {
+              console.error('Image removal failed during product update:', delErr);
+            }
+          }
+
           onSuccess();
           onClose();
         } else {
@@ -379,7 +360,8 @@ export function ProductFormSheet({
   const categorySuggestions = categories.filter((c) => c !== 'Semua');
 
   return (
-    <BottomSheet
+    <>
+      <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
       title={mode === 'create' ? 'Tambah Produk Baru' : 'Edit Produk'}
@@ -800,5 +782,14 @@ export function ProductFormSheet({
         </div>
       </form>
     </BottomSheet>
+
+    {/* Fullscreen Dedicated Image Editor Modal (z-[60]) */}
+    <ImageEditorModal
+      isOpen={isEditorOpen}
+      file={rawFileForEditor}
+      onClose={handleEditorClose}
+      onApply={handleEditorApply}
+    />
+  </>
   );
 }

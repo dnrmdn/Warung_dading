@@ -39,7 +39,7 @@ export function PublicStockItem({
       onClick={handleClick}
       disabled={!canAddToCart}
       className={cn(
-        'group relative flex w-full min-w-0 max-w-full flex-col items-center justify-between box-border p-1 rounded-md bg-surface border transition-all text-center select-none min-h-[64px] max-h-[74px] overflow-hidden',
+        'group relative flex w-full min-w-0 max-w-full flex-col items-center justify-between box-border p-2 rounded-xl bg-surface border transition-all text-center select-none min-h-[140px] overflow-hidden',
         isOutOfStock
           ? 'border-border/60 bg-surface/60 opacity-75 cursor-not-allowed'
           : !hasValidPrice
@@ -52,49 +52,49 @@ export function PublicStockItem({
       {/* Top-Right Badge: Active Cart Quantity (if selected) or Stock / Habis badge */}
       {isSelected ? (
         <span
-          className="absolute -top-0.5 -right-0.5 z-10 flex items-center justify-center min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-white text-[8px] font-bold shadow-xs leading-none"
+          className="absolute top-1 right-1 z-10 flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-primary text-white text-[9px] font-bold shadow-xs leading-none"
           title={`Dipilih: ${quantityInCart}`}
         >
           {quantityInCart}
         </span>
       ) : isOutOfStock ? (
         <span
-          className="absolute -top-0.5 -right-0.5 z-10 flex items-center justify-center px-1 h-3 rounded-full bg-danger-soft text-danger border border-danger/25 text-[7px] font-bold shadow-xs leading-none"
+          className="absolute top-1 right-1 z-10 flex items-center justify-center px-1.5 h-4 rounded-full bg-danger-soft text-danger border border-danger/25 text-[8px] font-bold shadow-xs leading-none"
           title="Habis"
         >
           Habis
         </span>
       ) : (
         <span
-          className="absolute -top-0.5 -right-0.5 z-10 flex items-center justify-center min-w-3.5 h-3.5 px-0.5 rounded-full bg-surface-subtle text-text border border-border text-[8px] font-bold shadow-xs leading-none"
+          className="absolute top-1 right-1 z-10 flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-surface-subtle text-text border border-border text-[9px] font-bold shadow-xs leading-none"
           title={`Sisa stok: ${product.stock}`}
         >
           {product.stock}
         </span>
       )}
 
-      {/* Product Image or Icon (compact 20px) */}
-      <div className="flex items-center justify-center w-5 h-5 shrink-0 overflow-hidden">
+      {/* Product Image or Icon (prominent square ~64x64px) */}
+      <div className="flex items-center justify-center w-16 h-16 shrink-0 overflow-hidden rounded-lg bg-surface-subtle/50 mb-1.5 mt-0.5">
         {hasImage ? (
           <Image
             src={product.imageUrl!}
             alt={product.name}
-            width={20}
-            height={20}
-            className="w-5 h-5 rounded-xs object-cover"
+            width={64}
+            height={64}
+            className="w-full h-full rounded-lg object-cover"
             onError={() => setImgError(true)}
             unoptimized
           />
         ) : (
-          <div className="text-primary/80 group-hover:text-primary transition-colors">
-            <ProductIcon name={product.iconName} className="w-4 h-4 stroke-[1.8]" />
+          <div className="text-primary/80 group-hover:text-primary transition-colors flex items-center justify-center">
+            <ProductIcon name={product.iconName} className="w-8 h-8 stroke-[1.8]" />
           </div>
         )}
       </div>
 
-      {/* Product Name (clamped to 2 lines, shrinkable) */}
+      {/* Product Name (clamped to 2 lines, readable ~12px) */}
       <span
-        className="text-[10px] font-medium text-text leading-[11px] line-clamp-2 w-full min-w-0 max-w-full break-words shrink"
+        className="text-[12px] font-semibold text-text leading-[14px] line-clamp-2 w-full min-w-0 max-w-full break-words shrink mb-1"
         title={product.name}
       >
         {product.name}
@@ -103,12 +103,12 @@ export function PublicStockItem({
       {/* Bottom price slot: Customer selling price (Rp1.000) or 'Harga hubungi staf' or 'Habis' */}
       <span
         className={cn(
-          'text-[9px] leading-tight truncate w-full min-w-0 max-w-full font-semibold shrink-0',
+          'text-[12px] leading-tight truncate w-full min-w-0 max-w-full font-bold shrink-0',
           isOutOfStock
             ? 'text-danger font-medium'
             : hasValidPrice
             ? 'text-primary'
-            : 'text-text-muted font-normal text-[8px]'
+            : 'text-text-muted font-normal text-[10px]'
         )}
       >
         {isOutOfStock

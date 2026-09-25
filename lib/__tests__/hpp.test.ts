@@ -147,6 +147,56 @@ export function runHPPTests() {
     'Test 7c — getDualModeHPP with preparedPrice: undefined returns only direct'
   );
 
+  // Test 8 — Recipe-only Production / direct mode (e.g. Cireng Isi Ayam)
+  const cirengIsiAyam: ProductHPPInput = {
+    price: 1000,
+    costPrice: 0,
+    preparedPrice: null,
+    hppComponents: [
+      { quantity: 1, unitCost: 65 }, // Terigu
+      { quantity: 1, unitCost: 90 }, // Ayam
+    ],
+  };
+
+  assertEqual(
+    calculateRecipeCost(cirengIsiAyam),
+    155,
+    'Test 8a — Recipe cost for Cireng Isi Ayam: calculateRecipeCost(cirengIsiAyam) === 155'
+  );
+
+  assertEqual(
+    calculateHPP(cirengIsiAyam, 'direct'),
+    155,
+    'Test 8b — Direct HPP for Cireng Isi Ayam: calculateHPP(cirengIsiAyam, "direct") === 155'
+  );
+
+  const cirengDual = getDualModeHPP(cirengIsiAyam);
+  assertEqual(
+    cirengDual.direct.unitHpp,
+    155,
+    'Test 8c — getDualModeHPP(cirengIsiAyam).direct.unitHpp === 155'
+  );
+
+  assertEqual(
+    formatMargin(cirengDual.direct.marginPercent),
+    '84.5%',
+    'Test 8d — Margin for Cireng Isi Ayam: formatMargin(cirengDual.direct.marginPercent) === "84.5%"'
+  );
+
+  // Test 9 — Product with no cost and no recipe
+  const noCostNoRecipeProduct: ProductHPPInput = {
+    price: 1000,
+    costPrice: 0,
+    preparedPrice: null,
+    hppComponents: [],
+  };
+
+  assertEqual(
+    calculateHPP(noCostNoRecipeProduct, 'direct'),
+    0,
+    'Test 9 — Product with no cost and no recipe: calculateHPP(noCostNoRecipeProduct, "direct") === 0'
+  );
+
   console.log('All unit tests passed successfully!');
 }
 

@@ -40,7 +40,11 @@ export function calculateRecipeCost(product: ProductHPPInput): number {
  *
  * Rules:
  * 1. direct:
- *    return costPrice ?? 0
+ *    baseCost = costPrice ?? 0
+ *    prepCost = calculateRecipeCost(product)
+ *    if baseCost > 0:
+ *      return baseCost
+ *    return prepCost
  *
  * 2. brewed:
  *    baseCost = costPrice ?? 0
@@ -57,7 +61,8 @@ export function calculateHPP(
   const prepCost = calculateRecipeCost(product);
 
   if (mode === 'direct') {
-    return baseCost;
+    if (baseCost > 0) return baseCost;
+    return prepCost;
   }
 
   // mode === 'brewed'

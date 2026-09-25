@@ -113,9 +113,75 @@ export async function compressImage(file: File): Promise<Blob> {
 }
 
 /**
+ * Crops and compresses an image to a 1:1 WebP blob (max 512x512px).
+ *
+ * @param imageElement - Loaded HTMLImageElement or ImageBitmap.
+ * @param cropArea - The source coordinates (sx, sy, sWidth, sHeight) from the original image.
+ * @returns A compressed WebP Blob ready for upload.
+ */
+export async function cropAndCompressToWebP(
+  imageElement: CanvasImageSource,
+  cropArea: { sx: number; sy: number; sWidth: number; sHeight: number }
+): Promise<Blob> {
+  const targetSize = Math.min(MAX_DIMENSION, Math.round(cropArea.sWidth));
+  const outputSize = Math.max(64, Math.min(MAX_DIMENSION, targetSize));
+
+  if (typeof OffscreenCanvas !== 'undefined') {
+    const canvas = new OffscreenCanvas(outputSize, outputSize);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Gagal membuat konteks Canvas.');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(
+      imageElement,
+      cropArea.sx,
+      cropArea.sy,
+      cropArea.sWidth,
+      cropArea.sHeight,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+    return canvas.convertToBlob({ type: 'image/webp', quality: WEBP_QUALITY });
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Gagal membuat konteks Canvas.');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(
+    imageElement,
+    cropArea.sx,
+    cropArea.sy,
+    cropArea.sWidth,
+    cropArea.sHeight,
+    0,
+    0,
+    outputSize,
+    outputSize
+  );
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Gagal mengompres gambar hasil crop.'));
+      },
+      'image/webp',
+      WEBP_QUALITY
+    );
+  });
+}
+
+/**
  * Creates a local preview URL for a File or Blob.
  * Remember to call URL.revokeObjectURL() when done.
  */
 export function createPreviewUrl(file: File | Blob): string {
   return URL.createObjectURL(file);
 }
+
