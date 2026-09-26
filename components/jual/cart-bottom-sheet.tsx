@@ -12,6 +12,7 @@ interface CartBottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
+  productStockMap: Map<string, number>;
   onIncrement: (itemId: string) => void;
   onDecrement: (itemId: string) => void;
   onRemove: (itemId: string) => void;
@@ -23,6 +24,7 @@ export function CartBottomSheet({
   isOpen,
   onClose,
   items,
+  productStockMap,
   onIncrement,
   onDecrement,
   onRemove,
@@ -53,63 +55,76 @@ export function CartBottomSheet({
           <>
             {/* Items List */}
             <div className="flex flex-col divide-y divide-border/60 max-h-[45vh] overflow-y-auto -mx-1 px-1">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between py-2.5 gap-2"
-                >
-                  {/* Left info */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-subtle text-primary shrink-0">
-                      <ProductIcon name={item.iconName} className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-body-medium font-medium text-text truncate">
-                          {item.name}
-                        </span>
-                        {item.mode === 'brewed' && (
-                          <Badge variant="primary">Diseduh</Badge>
-                        )}
-                      </div>
-                      <span className="text-caption text-text-secondary">
-                        {formatRupiah(item.unitPrice)}
-                      </span>
-                    </div>
-                  </div>
+              {items.map((item) => {
+                const currentStock = productStockMap.get(item.productId) ?? 0;
+                const totalAllocated = items
+                  .filter((cartItem) => cartItem.productId === item.productId)
+                  .reduce((sum, cartItem) => sum + cartItem.quantity, 0);
+                const remainingStock = currentStock - totalAllocated;
+                const isMaxReached = remainingStock <= 0;
 
-                  {/* Quantity Stepper Controls */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => onDecrement(item.id)}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-subtle border border-border text-text hover:bg-border active:scale-95 transition-all"
-                      aria-label="Kurangi jumlah"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="w-6 text-center text-body-medium font-semibold text-text">
-                      {item.quantity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onIncrement(item.id)}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-subtle border border-border text-text hover:bg-border active:scale-95 transition-all"
-                      aria-label="Tambah jumlah"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(item.id)}
-                      className="flex items-center justify-center w-7 h-7 rounded-lg text-text-muted hover:text-danger hover:bg-danger-soft/30 transition-all ml-1"
-                      aria-label="Hapus item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-2.5 gap-2"
+                  >
+                    {/* Left info */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-subtle text-primary shrink-0">
+                        <ProductIcon name={item.iconName} className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-body-medium font-medium text-text truncate">
+                            {item.name}
+                          </span>
+                          {item.mode === 'brewed' && (
+                            <Badge variant="primary">Diseduh</Badge>
+                          )}
+                        </div>
+                        <div className="text-caption text-text-muted leading-tight">
+                          Stok: {currentStock} • Sisa: {remainingStock}
+                        </div>
+                        <span className="text-caption text-text-secondary">
+                          {formatRupiah(item.unitPrice)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quantity Stepper Controls */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => onDecrement(item.id)}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-subtle border border-border text-text hover:bg-border active:scale-95 transition-all"
+                        aria-label="Kurangi jumlah"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="w-6 text-center text-body-medium font-semibold text-text">
+                        {item.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => !isMaxReached && onIncrement(item.id)}
+                        disabled={isMaxReached}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg bg-surface-subtle border border-border text-text hover:bg-border active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                        aria-label="Tambah jumlah"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemove(item.id)}
+                        className="flex items-center justify-center w-7 h-7 rounded-lg text-text-muted hover:text-danger hover:bg-danger-soft/30 transition-all ml-1"
+                        aria-label="Hapus item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Total Summary Footer */}

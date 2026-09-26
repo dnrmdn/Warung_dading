@@ -50,6 +50,11 @@ export function PosContainer({
     });
   }, [initialProducts, selectedCategory, searchQuery]);
 
+  // Map product id to current authoritative stock snapshot
+  const productStockMap = useMemo(() => {
+    return new Map(initialProducts.map((product) => [product.id, product.stock]));
+  }, [initialProducts]);
+
   // Total quantity in cart for a specific product
   const getItemQuantity = (productId: string) => {
     return cartItems
@@ -59,6 +64,12 @@ export function PosContainer({
 
   // Add item helper
   const addItemToCart = (product: Product, mode: SellingMode) => {
+    const currentStock = productStockMap.get(product.id) ?? product.stock;
+    const currentTotalInCart = getItemQuantity(product.id);
+    if (currentTotalInCart >= currentStock) {
+      return;
+    }
+
     const itemId = `${product.id}-${mode}`;
     const unitPrice =
       (mode === 'brewed' && product.preparedPrice
@@ -110,9 +121,18 @@ export function PosContainer({
 
   // Cart operations
   const handleIncrement = (itemId: string) => {
+    const item = cartItems.find((ci) => ci.id === itemId);
+    if (!item) return;
+
+    const currentStock = productStockMap.get(item.productId) ?? 0;
+    const currentTotalInCart = getItemQuantity(item.productId);
+    if (currentTotalInCart >= currentStock) {
+      return;
+    }
+
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+      prev.map((ci) =>
+        ci.id === itemId ? { ...ci, quantity: ci.quantity + 1 } : ci
       )
     );
   };
@@ -299,6 +319,7 @@ export function PosContainer({
         isOpen={isCartSheetOpen}
         onClose={() => setIsCartSheetOpen(false)}
         items={cartItems}
+        productStockMap={productStockMap}
         onIncrement={handleIncrement}
         onDecrement={handleDecrement}
         onRemove={handleRemove}
