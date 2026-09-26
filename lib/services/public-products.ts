@@ -20,7 +20,18 @@ export type PublicProduct = {
  */
 export async function getPublicProducts(): Promise<PublicProduct[]> {
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      stock: {
+        gt: 0,
+      },
+      category: {
+        name: {
+          not: 'Bahan',
+          mode: 'insensitive',
+        },
+      },
+    },
     select: {
       id: true,
       name: true,
