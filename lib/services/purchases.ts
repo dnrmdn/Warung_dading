@@ -232,7 +232,8 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
         resolvedSupplierName = supplier.name;
       }
 
-      // Step 2.2: Fetch active products for all item productIds
+      // Step 2.2: Fetch active products for all item productIds (including
+      // current stock so we can derive previousStock without a read-back query)
       const products = await tx.product.findMany({
         where: {
           id: { in: productIds },
@@ -242,6 +243,7 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
           id: true,
           name: true,
           unit: true,
+          stock: true,
         },
       });
 
@@ -299,48 +301,62 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
         },
       });
 
-      // Step 2.5: Deterministic product ID sorting before stock mutation
+      // Step 2.6: Deterministic product ID sorting before stock mutation
       const sortedProductIds = Array.from(productIds).sort((a, b) => a.localeCompare(b));
       const itemMap = new Map(input.items.map((it) => [it.productId, it.quantity]));
 
-      // Step 2.6: Atomic stock increment + StockAdjustmentLog for each product
+      // Pre-compute the stock adjustment note (identical for all items in this purchase)
+      const stockNote = formatPurchaseStockNote(
+        createdPurchase.id,
+        input.note,
+        resolvedSupplierName ?? undefined
+      );
+
+      // Step 2.7: Atomic stock increment for each product.
+      // previousStock is derived from the pre-fetched product data (step 2.2).
+      // newStock is returned directly from the update call, eliminating the
+      // separate findUniqueOrThrow read-back that previously caused P2028
+      // timeouts on high-latency connections.
+      // Log data is collected in memory and batch-inserted after the loop.
+      const adjustmentLogs: Array<{
+        productId: string;
+        type: string;
+        amount: number;
+        previousStock: number;
+        newStock: number;
+        reason: string;
+        note: string;
+      }> = [];
+
       for (const productId of sortedProductIds) {
         const quantity = itemMap.get(productId)!;
+        const previousStock = productMap.get(productId)!.stock;
 
-        await tx.product.update({
+        const updated = await tx.product.update({
           where: { id: productId },
           data: {
             stock: {
               increment: quantity,
             },
           },
-        });
-
-        // Read updated live stock within the same transaction
-        const updated = await tx.product.findUniqueOrThrow({
-          where: { id: productId },
           select: { stock: true },
         });
 
-        const newStock = updated.stock;
-        const previousStock = newStock - quantity;
+        adjustmentLogs.push({
+          productId,
+          type: 'add',
+          amount: quantity,
+          previousStock,
+          newStock: updated.stock,
+          reason: 'pembelian',
+          note: stockNote,
+        });
+      }
 
-        const stockNote = formatPurchaseStockNote(
-          createdPurchase.id,
-          input.note,
-          resolvedSupplierName ?? undefined
-        );
-
-        await tx.stockAdjustmentLog.create({
-          data: {
-            productId,
-            type: 'add',
-            amount: quantity,
-            previousStock,
-            newStock,
-            reason: 'pembelian',
-            note: stockNote,
-          },
+      // Step 2.8: Batch-insert all StockAdjustmentLog records in one query
+      if (adjustmentLogs.length > 0) {
+        await tx.stockAdjustmentLog.createMany({
+          data: adjustmentLogs,
         });
       }
 
