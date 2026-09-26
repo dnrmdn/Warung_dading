@@ -3,6 +3,7 @@ import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { Purchase, PurchaseItem } from '@/types/warung';
 import { Prisma } from '@prisma/client';
+import { calculateHPP } from '@/lib/hpp';
 
 // ─── Domain Errors ───────────────────────────────────────────────────────────
 
@@ -233,7 +234,8 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
       }
 
       // Step 2.2: Fetch active products for all item productIds (including
-      // current stock so we can derive previousStock without a read-back query)
+      // current stock, costPrice, price, preparedPrice, and recipeComponents)
+      // to calculate effective HPP before and after purchase.
       const products = await tx.product.findMany({
         where: {
           id: { in: productIds },
@@ -244,6 +246,15 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
           name: true,
           unit: true,
           stock: true,
+          costPrice: true,
+          price: true,
+          preparedPrice: true,
+          recipeComponents: {
+            select: {
+              quantity: true,
+              unitCost: true,
+            },
+          },
         },
       });
 
@@ -301,9 +312,9 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
         },
       });
 
-      // Step 2.6: Deterministic product ID sorting before stock mutation
+      // Step 2.6: Deterministic product ID sorting before mutations
       const sortedProductIds = Array.from(productIds).sort((a, b) => a.localeCompare(b));
-      const itemMap = new Map(input.items.map((it) => [it.productId, it.quantity]));
+      const itemMap = new Map(input.items.map((it) => [it.productId, it]));
 
       // Pre-compute the stock adjustment note (identical for all items in this purchase)
       const stockNote = formatPurchaseStockNote(
@@ -312,12 +323,9 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
         resolvedSupplierName ?? undefined
       );
 
-      // Step 2.7: Atomic stock increment for each product.
-      // previousStock is derived from the pre-fetched product data (step 2.2).
-      // newStock is returned directly from the update call, eliminating the
-      // separate findUniqueOrThrow read-back that previously caused P2028
-      // timeouts on high-latency connections.
-      // Log data is collected in memory and batch-inserted after the loop.
+      // Step 2.7: Atomic stock increment, cost baseline update, and HPP change detection.
+      // We calculate effective HPP before and after applying the newly purchased unitCost.
+      // Only when oldHpp !== newHpp do we generate an HppChangeLog entry.
       const adjustmentLogs: Array<{
         productId: string;
         type: string;
@@ -328,16 +336,62 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
         note: string;
       }> = [];
 
-      for (const productId of sortedProductIds) {
-        const quantity = itemMap.get(productId)!;
-        const previousStock = productMap.get(productId)!.stock;
+      const hppChangeLogs: Array<{
+        productId: string;
+        purchaseId: string;
+        oldHpp: number;
+        newHpp: number;
+      }> = [];
 
+      for (const productId of sortedProductIds) {
+        const purchaseItem = itemMap.get(productId)!;
+        const quantity = purchaseItem.quantity;
+        const newUnitCost = purchaseItem.unitCost;
+        const product = productMap.get(productId)!;
+        const previousStock = product.stock;
+
+        // Map recipe components to HPPComponentInput shape for lib/hpp
+        const hppComponents = product.recipeComponents.map((rc) => ({
+          quantity: Number(rc.quantity),
+          unitCost: rc.unitCost,
+        }));
+
+        // Determine effective mode for HPP calculation
+        const effectiveMode =
+          product.preparedPrice != null && product.preparedPrice > 0
+            ? 'brewed'
+            : 'direct';
+
+        // 1. Calculate effective HPP BEFORE purchase
+        const oldHpp = calculateHPP(
+          {
+            costPrice: product.costPrice,
+            price: product.price,
+            preparedPrice: product.preparedPrice,
+            hppComponents,
+          },
+          effectiveMode
+        );
+
+        // 2. Calculate effective HPP AFTER updating costPrice to newUnitCost
+        const newHpp = calculateHPP(
+          {
+            costPrice: newUnitCost,
+            price: product.price,
+            preparedPrice: product.preparedPrice,
+            hppComponents,
+          },
+          effectiveMode
+        );
+
+        // 3. Atomically increment stock and update costPrice on Product
         const updated = await tx.product.update({
           where: { id: productId },
           data: {
             stock: {
               increment: quantity,
             },
+            costPrice: newUnitCost,
           },
           select: { stock: true },
         });
@@ -351,12 +405,29 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
           reason: 'pembelian',
           note: stockNote,
         });
+
+        // 4. Record HPP change log if effective HPP changed
+        if (oldHpp !== newHpp) {
+          hppChangeLogs.push({
+            productId,
+            purchaseId: createdPurchase.id,
+            oldHpp,
+            newHpp,
+          });
+        }
       }
 
       // Step 2.8: Batch-insert all StockAdjustmentLog records in one query
       if (adjustmentLogs.length > 0) {
         await tx.stockAdjustmentLog.createMany({
           data: adjustmentLogs,
+        });
+      }
+
+      // Step 2.9: Batch-insert all HppChangeLog records in one query
+      if (hppChangeLogs.length > 0) {
+        await tx.hppChangeLog.createMany({
+          data: hppChangeLogs,
         });
       }
 

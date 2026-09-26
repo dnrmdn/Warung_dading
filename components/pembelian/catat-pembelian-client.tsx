@@ -281,8 +281,8 @@ export function CatatPembelianClient({ initialProducts, categories }: CatatPembe
         return;
       }
 
-      // On success navigate back to /pembelian
-      router.push('/pembelian');
+      // On success navigate to /dashboard
+      router.push('/dashboard');
     });
   };
 

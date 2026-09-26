@@ -156,6 +156,30 @@ export interface CreatePurchaseInput {
   note?: string;
 }
 
+// ─── HPP Change Log ────────────────────────────────────────────────────────
+
+export interface HppChangeLog {
+  id: string;
+  productId: string;
+  purchaseId: string;
+  oldHpp: number;
+  newHpp: number;
+  readAt?: string | null;
+  createdAt: string;
+}
+
+export interface DashboardHppChangeItem {
+  id: string;
+  productId: string;
+  productName: string;
+  unit: string;
+  purchaseId: string;
+  oldHpp: number;
+  newHpp: number;
+  readAt?: string | null;
+  createdAt: string;
+}
+
 // ─── Pengeluaran (Expenses) ────────────────────────────────────────────────
 
 export type ExpenseCategory =

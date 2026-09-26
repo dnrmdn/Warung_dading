@@ -52,6 +52,7 @@ model Product {
   stockAdjustments StockAdjustmentLog[]
   purchaseItems    PurchaseItem[]
   saleItems        SaleItem[]
+  hppChangeLogs    HppChangeLog[]
 }
 
 // ─── RecipeComponent ─────────────────────────────────────────────────────────
@@ -132,6 +133,7 @@ model Purchase {
   note         String?                          // TS: note?: string
   createdAt    DateTime       @default(now())
   items        PurchaseItem[]
+  hppChangeLogs HppChangeLog[]
 }
 
 // ─── PurchaseItem ────────────────────────────────────────────────────────────
@@ -151,6 +153,27 @@ model PurchaseItem {
   unitCost    Int                              // TS: unitCost: number — Rupiah Int, snapshot
   subtotal    Int                              // TS: subtotal: number — quantity * unitCost
   createdAt   DateTime @default(now())
+}
+
+// ─── HppChangeLog ────────────────────────────────────────────────────────────
+// Persistent audit record created whenever a purchase modifies a product's HPP.
+// Traceable to both the affected Product and the causing Purchase.
+
+model HppChangeLog {
+  id         String    @id @default(uuid())
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchaseId String
+  purchase   Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  oldHpp     Int                               // Effective HPP before purchase
+  newHpp     Int                               // Effective HPP after purchase
+  readAt     DateTime?                         // null = unread; non-null = read timestamp
+  createdAt  DateTime  @default(now())
+
+  @@index([productId, createdAt])
+  @@index([purchaseId])
+  @@index([readAt])
+  @@index([createdAt])
 }
 
 // ─── Sale ────────────────────────────────────────────────────────────────────

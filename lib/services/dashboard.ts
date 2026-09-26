@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { prisma } from '@/lib/prisma';
+import { DashboardHppChangeItem } from '@/types/warung';
 
 // ─── Return Types ────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export interface DashboardStats {
   topProducts: DashboardTopProduct[];
   lowStockProducts: DashboardLowStockItem[];
   totalProductCount: number;
+  recentHppChanges: DashboardHppChangeItem[];
 }
 
 // ─── Date Helpers ────────────────────────────────────────────────────────────
@@ -76,6 +78,7 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
     topGrouped,
     activeProducts,
     allRecentSnapshots,
+    rawHppChanges,
   ] = await Promise.all([
     prisma.sale.aggregate({
       where: {
@@ -159,6 +162,22 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
         productName: true,
       },
     }),
+
+    // Recent HPP changes for dashboard notification banner (bounded to 10 latest entries)
+    prisma.hppChangeLog.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      include: {
+        product: {
+          select: {
+            name: true,
+            unit: true,
+          },
+        },
+      },
+    }),
   ]);
 
   const todayRevenue = todayAggregate._sum.totalAmount ?? 0;
@@ -218,6 +237,18 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
       iconName: p.iconName ?? undefined,
     }));
 
+  const recentHppChanges: DashboardHppChangeItem[] = rawHppChanges.map((log) => ({
+    id: log.id,
+    productId: log.productId,
+    productName: log.product.name,
+    unit: log.product.unit,
+    purchaseId: log.purchaseId,
+    oldHpp: log.oldHpp,
+    newHpp: log.newHpp,
+    readAt: log.readAt ? log.readAt.toISOString() : null,
+    createdAt: log.createdAt.toISOString(),
+  }));
+
   return {
     todayRevenue,
     todayProfit,
@@ -229,5 +260,27 @@ export async function getDashboardStats(dateOverride?: string): Promise<Dashboar
     topProducts,
     lowStockProducts,
     totalProductCount,
+    recentHppChanges,
   };
+}
+
+/**
+ * Marks an HppChangeLog entry as read by recording the current timestamp in readAt.
+ */
+export async function markHppChangeAsRead(id: string): Promise<void> {
+  const existing = await prisma.hppChangeLog.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new Error('Catatan perubahan HPP tidak ditemukan.');
+  }
+
+  await prisma.hppChangeLog.update({
+    where: { id },
+    data: {
+      readAt: new Date(),
+    },
+  });
 }

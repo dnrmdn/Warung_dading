@@ -5,6 +5,7 @@ import { HeaderBar } from '@/components/navigation/header-bar';
 import { getDashboardStats } from '@/lib/services/dashboard';
 import { getTodayCashPosition } from '@/lib/services/cash';
 import { CashPositionCard } from '@/components/dashboard/cash-position-card';
+import { HppChangeNotification } from '@/components/dashboard/hpp-change-notification';
 import { formatRupiah } from '@/lib/format';
 import { Badge } from '@/components/ui/badge';
 import { ProductIcon } from '@/components/ui/product-icon';
@@ -32,6 +33,7 @@ export default async function DashboardPage() {
     topProducts,
     lowStockProducts,
     totalProductCount,
+    recentHppChanges,
   }, cashPosition] = await Promise.all([
     enforceAdminPage(),
     getDashboardStats(),
@@ -176,6 +178,9 @@ export default async function DashboardPage() {
             </div>
           </Link>
         </div>
+
+        {/* HPP Change Notifications */}
+        <HppChangeNotification items={recentHppChanges} />
 
         {/* Low Stock Warning Section */}
         {lowStockProducts.length > 0 && (
